@@ -261,12 +261,18 @@ function roiStr(n) {
   if (n < 0)      return "-$"+Math.abs(n);
   return "$"+n;
 }
+function fmtDollar(val) {
+  if (!val || val === "—") return "—";
+  var n = parseFloat(String(val).replace(/[^0-9.-]/g,""));
+  if (isNaN(n)) return String(val);
+  return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 function roiHtml(val) {
   if (!val || val === "—") return "—";
   var n = parseFloat(String(val).replace(/[^0-9.-]/g,""));
   if (isNaN(n)) return String(val);
   var color = n < 0 ? "#A93226" : "#3B6D11";
-  return '<span style="color:'+color+';font-weight:500">'+val+"</span>";
+  return '<span style="color:'+color+';font-weight:500">'+Math.round(n)+"%</span>";
 }
 function pill(label,cls) {
   return '<span class="pill '+cls+'">'+label+"</span>";
@@ -454,7 +460,7 @@ function renderRoadmap() {
       +"<td>"+i.techLead+"</td>"
       +"<td>"+i.theme+"</td>"
       +"<td>"+i.team+"</td>"
-      +"<td>"+i.addedValue+"</td>"
+      +"<td>"+fmtDollar(i.addedValue)+"</td>"
       +"<td>"+roiHtml(i.roi)+"</td>"
       +"<td>"+dsHtml(idx)+"</td>"
       +"</tr>";
