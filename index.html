@@ -344,6 +344,8 @@ function buildQuarterlyProgressBars(){
     var nsW=Math.round(ns/total*100),onW=Math.round(on/total*100),arW=Math.round(ar/total*100),dlW=Math.round(dl/total*100);
     var meta=(ns>0?ns+" not started · ":"")+(on>0?on+" on track · ":"")+(ar>0?ar+" at risk · ":"")+(dl>0?dl+" delayed":"");
     if(items.length===0)meta="No initiatives";
+    var roiSum=0,roiCount=0;items.forEach(function(i){var r=parseFloat(String(i.roi||"").replace(/[^0-9.-]/g,""));if(!isNaN(r)){roiSum+=r;roiCount++;}});
+    var roiPct=roiCount?Math.round(roiSum/roiCount*100)+"%":"—";
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
       +'<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:500">'+q+'</span><span style="font-size:11px;color:var(--faint);background:var(--bg);border-radius:20px;padding:1px 8px">'+items.length+'</span></div>'
       +'<div style="padding:10px 14px 4px"><div style="display:flex;height:6px;border-radius:4px;overflow:hidden;gap:1px">'
@@ -353,7 +355,7 @@ function buildQuarterlyProgressBars(){
       +(dlW>0?'<div style="flex:'+dlW+';background:#FDECEA"></div>':'')
       +(items.length===0?'<div style="flex:1;background:var(--bg)"></div>':'')
       +'</div><div style="font-size:10px;color:var(--faint);margin-top:4px">'+meta+'</div></div>'
-      +'<div style="padding:6px 14px 12px;border-top:1px solid var(--border);margin-top:8px"><div style="font-size:10px;color:var(--faint)">Added Value</div><div style="font-size:14px;font-weight:500;color:var(--accent)">'+avLbl+'</div></div>'
+      +'<div style="padding:6px 14px 12px;border-top:1px solid var(--border);margin-top:8px"><div style="font-size:10px;color:var(--faint)">Avg ROI</div><div style="font-size:14px;font-weight:500;color:var(--accent)">'+roiPct+' <span style="font-size:11px;font-weight:400;color:var(--muted)">('+avLbl+')</span></div></div>'
       +'</div>';
   }).join("")+"</div>";
 }
