@@ -380,6 +380,7 @@ function switchKanbanQuarter(q){
 }
 function switchROIQuarter(q){
   document.getElementById("roi-content").innerHTML=buildScatterPlot(q)+roiRenderContent(q);
+  setTimeout(function(){renderScatterChart(q);},50);
   setQAct("roi",q);
 }
 
@@ -420,6 +421,19 @@ function buildScatterPlot(q){
   var drivers=[];
   subset.forEach(function(i){if(drivers.indexOf(i.driver)===-1)drivers.push(i.driver);});
   drivers.sort();
+  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">'
+    +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:12px">Added Value vs ROI — each point is an initiative</div>'
+    +'<div style="position:relative;width:100%;height:240px"><canvas id="roiScatterCanvas" role="img" aria-label="Scatter plot added value vs ROI">Scatter plot of initiatives by added value and ROI.</canvas></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">'+drivers.map(function(d){var c=driverColors[d]||"#888780";return '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)"><span style="width:8px;height:8px;border-radius:50%;background:'+c+';display:inline-block"></span>'+d+'</span>';}).join("")+'</div>'
+    +'</div>';
+}
+
+function renderScatterChart(q){
+  var subset=q==="all"?initiatives.filter(function(i){return i.quarter!=="Backlog";}):initiatives.filter(function(i){return i.quarter===q;});
+  var driverColors={"Revenue Generating":"#ED005E","Operational Efficiency":"#854F0B","Enhancements":"#888780","Strategic":"#185FA5","Tech":"#E24B4A"};
+  var drivers=[];
+  subset.forEach(function(i){if(drivers.indexOf(i.driver)===-1)drivers.push(i.driver);});
+  drivers.sort();
   var datasets=drivers.map(function(d){
     var color=driverColors[d]||"#888780";
     var pts=subset.filter(function(i){return i.driver===d;}).map(function(i){
@@ -430,13 +444,22 @@ function buildScatterPlot(q){
     }).filter(Boolean);
     return {label:d,data:pts,backgroundColor:color+"99",borderColor:color,pointRadius:7,pointHoverRadius:10};
   });
-  var id="scatter-"+Date.now();
-  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">'
-    +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:12px">Added Value vs ROI — each point is an initiative</div>'
-    +'<div style="position:relative;width:100%;height:240px"><canvas id="'+id+'" role="img" aria-label="Scatter plot added value vs ROI">Scatter plot of initiatives by added value and ROI.</canvas></div>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">'+drivers.map(function(d){var c=driverColors[d]||"#888780";return '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)"><span style="width:8px;height:8px;border-radius:50%;background:'+c+';display:inline-block"></span>'+d+'</span>';}).join("")+'</div>'
-    +'</div>'
-    +'<script>setTimeout(function(){if(!window.Chart)return;new Chart(document.getElementById("'+id+'"),{type:"scatter",data:{datasets:'+JSON.stringify(datasets).replace(/<\/script>/g,"<\\/script>")+'},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label+" — $"+c.raw.x+"K, "+c.raw.y+"%";}}}},scales:{x:{title:{display:true,text:"Added Value ($K)",font:{size:11}},ticks:{font:{size:11},callback:function(v){return "$"+v+"K";}}},y:{title:{display:true,text:"ROI %",font:{size:11}},ticks:{font:{size:11},callback:function(v){return v+"%";}},grid:{color:function(c){return c.tick.value===0?"rgba(0,0,0,0.2)":"rgba(0,0,0,0.06)";}}}},layout:{padding:10}}});},200);<\/script>';
+  var canvas=document.getElementById("roiScatterCanvas");
+  if(!canvas||!window.Chart)return;
+  if(window._roiScatterChart) window._roiScatterChart.destroy();
+  window._roiScatterChart=new Chart(canvas,{
+    type:"scatter",
+    data:{datasets:datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label+" — $"+c.raw.x+"K, "+c.raw.y+"%";}}}},
+      scales:{
+        x:{title:{display:true,text:"Added Value ($K)",font:{size:11}},ticks:{font:{size:11},callback:function(v){return "$"+v+"K";}}},
+        y:{title:{display:true,text:"ROI %",font:{size:11}},ticks:{font:{size:11},callback:function(v){return v+"%";}},grid:{color:function(c){return c.tick.value===0?"rgba(0,0,0,0.2)":"rgba(0,0,0,0.06)";}}}
+      },
+      layout:{padding:10}
+    }
+  });
 }
 
 /* ---- ROI tab content ---- */
@@ -444,7 +467,15 @@ function roiMakeOverallCard(subset,label){var s=roiCalcGroup(subset),p=isNaN(s.r
 function roiMakeBarCard(subset,title,label,key){var keys=[];subset.forEach(function(i){if(keys.indexOf(i[key])===-1)keys.push(i[key]);});keys.sort();var rows=keys.map(function(k,ki){var s=roiCalcGroup(subset.filter(function(i){return i[key]===k;})),p=isNaN(s.roiAvg)?0:Math.round(s.roiAvg*100),tc=p<0?"#E24B4A":"#3B6D11",isLast=ki===keys.length-1;return '<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:10px 0;'+(isLast?"":" border-bottom:0.5px solid var(--border);")+'align-items:center"><div style="font-size:12px;color:var(--text)">'+k+'</div><div style="font-size:12px;font-weight:500;text-align:right;min-width:80px">'+roiFmtEU(s.av)+'</div><div style="font-size:12px;font-weight:500;color:'+tc+';text-align:right;min-width:48px">'+p+'%</div></div>';}).join("");var hdr='<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)"><div></div><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:80px">Added Value</div><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:48px">Avg ROI</div></div>';return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px"><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:14px">'+title+" &mdash; "+label+'</div>'+hdr+rows+'</div>';}
 function roiMakeTable(subset){var rows=subset.map(function(i){return "<tr><td>"+i.quarter+"</td><td>"+i.title+"</td><td>"+i.driver+"</td><td>"+i.team+"</td><td>"+i.theme+"</td><td>"+fmtDollar(i.addedValue)+"</td><td>"+roiHtml(i.roi)+"</td></tr>";}).join("");return '<div class="twrap"><div class="thead-row">Initiatives</div><table><thead><tr><th>Quarter</th><th>Initiative</th><th>Driver</th><th>Team</th><th>Theme</th><th>Added Value</th><th>ROI</th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
 function roiRenderContent(q){var label=q==="all"?"All Year":q,subset=q==="all"?initiatives.filter(function(i){return i.quarter!=="Backlog";}):initiatives.filter(function(i){return i.quarter===q;});return '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px">'+roiMakeOverallCard(subset,label)+roiMakeBarCard(subset,"ROI by Driver",label,"driver")+roiMakeBarCard(subset,"ROI by Theme",label,"theme")+roiMakeBarCard(subset,"ROI by Team",label,"team")+"</div>"+roiMakeTable(subset);}
-function buildROISummaries(){var cq=currentQ();return buildQFilter("roi","switchROIQuarter")+'<div id="roi-content">'+buildScatterPlot(cq)+roiRenderContent(cq)+'</div>';}
+function buildROISummaries(){
+  var cq=currentQ();
+  return buildQFilter("roi","switchROIQuarter")
+    +'<div id="roi-content">'+buildScatterPlot(cq)+roiRenderContent(cq)+'</div>';
+}
+
+function initROIScatter(){
+  setTimeout(function(){renderScatterChart(currentQ());},100);
+}
 
 /* ---- Render pages ---- */
 function renderRoadmap(){
@@ -497,7 +528,13 @@ function openLinkPopup(e,idx){e.stopPropagation();_linkIdx=idx;var pop=document.
 function saveLink(){if(_linkIdx===null)return;var idx=_linkIdx;initiatives[idx].link=document.getElementById("linkInput").value.trim();document.getElementById("linkPopup").classList.remove("show");_linkIdx=null;var rows=document.querySelectorAll("#rt-table table tbody tr");if(rows[idx])rows[idx].cells[1].innerHTML=titleCellHtml(idx);saveLocalState();}
 function clearLink(){if(_linkIdx===null)return;var idx=_linkIdx;initiatives[idx].link="";document.getElementById("linkPopup").classList.remove("show");_linkIdx=null;var rows=document.querySelectorAll("#rt-table table tbody tr");if(rows[idx])rows[idx].cells[1].innerHTML=titleCellHtml(idx);saveLocalState();}
 function closePopup(){document.getElementById("linkPopup").classList.remove("show");_linkIdx=null;}
-function switchTab(btn,id){document.querySelectorAll(".tabnav .tabitem").forEach(function(b){b.classList.remove("act");});btn.classList.add("act");document.querySelectorAll(".tabpanel").forEach(function(p){p.classList.remove("act");});document.getElementById("rt-"+id).classList.add("act");}
+function switchTab(btn,id){
+  document.querySelectorAll(".tabnav .tabitem").forEach(function(b){b.classList.remove("act");});
+  btn.classList.add("act");
+  document.querySelectorAll(".tabpanel").forEach(function(p){p.classList.remove("act");});
+  document.getElementById("rt-"+id).classList.add("act");
+  if(id==="roi") setTimeout(function(){renderScatterChart(currentQ());},50);
+}
 function buildNav(){document.getElementById("nav").innerHTML=NAV_CONFIG.map(function(sec){return "<div><div class=\"seclabel\">"+sec.section+"</div>"+sec.items.map(function(item){var act=item.id===activeId;return "<div class=\"nitem"+(act?" act":"")+"\" onclick=\"setPage('"+item.id+"','"+item.label+"')\">"+(act?"<div class=\"nbar\"></div>":"")+"<div class=\"nico\">"+item.icon+"</div><span class=\"nlabel\">"+item.label+"</span></div>";}).join("")+"</div>";}).join("");}
 function setPage(id,label){activeId=id;document.getElementById("pgname").textContent=label;document.getElementById("content").innerHTML=PAGES[id]?PAGES[id]():"<div class=\"ptitle\">"+label+"</div>";buildNav();}
 function loadData(cb){var el=document.getElementById("content");if(el)el.innerHTML='<div style="padding:40px 32px;font-size:13px;color:var(--muted)">Loading data...</div>';fetch("/api/data").then(function(r){return r.json();}).then(function(data){initiatives=(data.initiatives||[]).map(function(i){return {quarter:String(i.quarter||"").trim(),title:String(i.title||"").trim(),driver:String(i.driver||"").trim(),team:String(i.team||"").trim(),theme:String(i.theme||"").trim(),productOwner:String(i.productOwner||"").trim(),techLead:String(i.techLead||"").trim(),addedValue:(i.addedValue!==undefined&&i.addedValue!=="")? i.addedValue:"—",roi:(i.roi!==undefined&&i.roi!=="")? i.roi:"—",deliveryStatus:"not-started",confidence:"medium",link:""};});      loadLocalState(function(){if(cb)cb();});}).catch(function(err){if(el)el.innerHTML='<div style="padding:40px 32px;font-size:13px;color:#C0392B">Failed to load data.<br><br>'+err+"</div>";});}
