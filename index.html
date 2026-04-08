@@ -337,32 +337,25 @@ function roiMakeBarCard(subset,title,label,key){
   var keys=[];
   subset.forEach(function(i){if(keys.indexOf(i[key])===-1) keys.push(i[key]);});
   keys.sort();
-  var maxROI=0;
-  keys.forEach(function(k){
-    var s=roiCalcGroup(subset.filter(function(i){return i[key]===k;}));
-    var p=Math.abs(isNaN(s.roiAvg)?0:Math.round(s.roiAvg*100));
-    if(p>maxROI) maxROI=p;
-  });
-  var rows=keys.map(function(k){
+  var header='<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)">'
+    +'<div></div>'
+    +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:64px">Added Value</div>'
+    +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:48px">Avg ROI</div>'
+    +"</div>";
+  var rows=keys.map(function(k,ki){
     var s=roiCalcGroup(subset.filter(function(i){return i[key]===k;}));
     var pct=isNaN(s.roiAvg)?0:Math.round(s.roiAvg*100);
-    var barPct=maxROI>0?Math.round(Math.abs(pct)/maxROI*100):0;
-    var barColor=pct<0?"#F09595":"#ED005E";
-    var textColor=pct<0?"#E24B4A":"#ED005E";
-    return '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<span style="font-size:12px;color:var(--text)">'+k+"</span>"
-      +'<span style="font-size:12px;font-weight:500;color:'+textColor+'">'+pct+'% <span style="font-weight:400;color:var(--muted);font-size:11px">('+roiFmtAV(s.av)+")</span></span>"
-      +"</div>"
-      +'<div style="width:100%;height:8px;background:var(--bg);border-radius:4px;overflow:hidden">'
-      +'<div style="height:100%;width:'+barPct+'%;background:'+barColor+';border-radius:4px;transition:width .3s"></div>'
-      +"</div>"
+    var textColor=pct<0?"#E24B4A":"#3B6D11";
+    var isLast=ki===keys.length-1;
+    return '<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:10px 0;'+(isLast?"":" border-bottom:0.5px solid var(--border);")+'align-items:center">'
+      +'<div style="font-size:12px;color:var(--text)">'+k+"</div>"
+      +'<div style="font-size:12px;font-weight:500;text-align:right;min-width:64px">'+roiFmtAV(s.av)+"</div>"
+      +'<div style="font-size:12px;font-weight:500;color:'+textColor+';text-align:right;min-width:48px">'+pct+"%</div>"
       +"</div>";
   }).join("");
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">'
     +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:14px">'+title+" &mdash; "+label+"</div>"
-    +rows
-    +"</div>";
+    +header+rows+"</div>";
 }
 function roiMakeTable(subset){
   var rows=subset.map(function(i){
