@@ -103,15 +103,16 @@ tr:hover td{background:#FAFAF8}
 .ds-wrap:hover .ds-pill{opacity:.85}
 .ds-pill{pointer-events:none}
 .ds-select{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.ds-gray{background:#F1EFE8;color:#6B6B65}
 .ds-green{background:#EAF3DE;color:#3B6D11}
 .ds-yellow{background:#FAEEDA;color:#854F0B}
 .ds-red{background:#FDECEA;color:#A93226}
-.kanban{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .kancol{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .kancol-head{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:space-between}
 .kancol-count{font-size:11px;color:var(--faint);background:var(--bg);border-radius:20px;padding:1px 8px}
 .kancol-body{padding:10px;display:flex;flex-direction:column;gap:8px}
-.kancard{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 12px;display:flex;flex-direction:column;gap:8px}
+.kancard{background:#fff;border:1px solid var(--border);border-radius:8px;padding:11px 12px;display:flex;flex-direction:column;gap:8px}
 .kancard-header{display:flex;flex-direction:column;gap:2px}
 .kancard-title{font-size:12px;font-weight:500;line-height:1.4;color:var(--text)}
 .kancard-tags{font-size:10px;color:var(--faint)}
@@ -234,9 +235,10 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 var initiatives = [];
 
 var deliveryOpts = [
-  {val:"on-track", label:"On Track", cls:"ds-green"},
-  {val:"at-risk",  label:"At Risk",  cls:"ds-yellow"},
-  {val:"delayed",  label:"Delayed",  cls:"ds-red"}
+  {val:"not-started", label:"Not Started", cls:"ds-gray"},
+  {val:"on-track",    label:"On Track",    cls:"ds-green"},
+  {val:"at-risk",     label:"At Risk",     cls:"ds-yellow"},
+  {val:"delayed",     label:"Delayed",     cls:"ds-red"}
 ];
 var confClass = {high:"p-done", medium:"p-prog", low:"p-plan"};
 var NAV_CONFIG = [
@@ -257,8 +259,14 @@ function currentQLabel() {
   var m = new Date().getMonth(), y = new Date().getFullYear();
   return "Q" + (m < 3 ? 1 : m < 6 ? 2 : m < 9 ? 3 : 4) + " " + y;
 }
-function roiNum(str) { return parseInt((str||"").replace(/[^0-9]/g,"")) || 0; }
-function roiStr(n)   { return n >= 1000 ? "$"+(n/1000).toFixed(0)+"K" : "$"+n; }
+function roiHtml(val) {
+  if (!val || val === "—") return "—";
+  var n = parseFloat(String(val).replace(/[^0-9.-]/g,""));
+  if (isNaN(n)) return val;
+  var color = n < 0 ? "#A93226" : "#3B6D11";
+  return '<span style="color:'+color+';font-weight:500">'+val+"</span>";
+}
+function roiStr(n) { return n >= 1000 ? "$"+(n/1000).toFixed(0)+"K" : n <= -1000 ? "-$"+(Math.abs(n)/1000).toFixed(0)+"K" : (n<0?"-$"+Math.abs(n):"$"+n); }
 function pill(label,cls) { return '<span class="pill '+cls+'">'+label+"</span>"; }
 
 function dsHtml(idx) {
@@ -296,10 +304,12 @@ function scInitiatives() {
   var onT = inQ.filter(function(i){return i.deliveryStatus==="on-track";}).length;
   var atR = inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length;
   var del = inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;
+  var ns  = inQ.filter(function(i){return i.deliveryStatus==="not-started";}).length;
   return '<div class="mcard" id="sc-init">'
     +'<div class="mlabel">Initiatives <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">'+currentQLabel()+"</span></div>"
     +'<div class="mval" id="sc-total">'+inQ.length+"</div>"
     +'<div class="sc-badges">'
+    +'<span class="sc-badge ds-gray"><span id="sc-notstarted">'+ns+"</span> Not Started</span>"
     +'<span class="sc-badge ds-green"><span id="sc-ontrack">'+onT+"</span> On Track</span>"
     +'<span class="sc-badge ds-yellow"><span id="sc-atrisk">'+atR+"</span> At Risk</span>"
     +'<span class="sc-badge ds-red"><span id="sc-delayed">'+del+"</span> Delayed</span>"
@@ -334,10 +344,11 @@ function refreshSc() {
   if(!document.getElementById("sc-init")) return;
   var cq = currentQ();
   var inQ = initiatives.filter(function(i){return i.quarter===cq;});
-  document.getElementById("sc-total").textContent   = inQ.length;
-  document.getElementById("sc-ontrack").textContent = inQ.filter(function(i){return i.deliveryStatus==="on-track";}).length;
-  document.getElementById("sc-atrisk").textContent  = inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length;
-  document.getElementById("sc-delayed").textContent = inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;
+  document.getElementById("sc-total").textContent      = inQ.length;
+  document.getElementById("sc-notstarted").textContent = inQ.filter(function(i){return i.deliveryStatus==="not-started";}).length;
+  document.getElementById("sc-ontrack").textContent    = inQ.filter(function(i){return i.deliveryStatus==="on-track";}).length;
+  document.getElementById("sc-atrisk").textContent     = inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length;
+  document.getElementById("sc-delayed").textContent    = inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;
 }
 
 function buildFilterOptions(key) {
@@ -416,7 +427,7 @@ function resetFiltersKanban() {
 }
 
 function renderRoadmap() {
-  var quarters = ["Q1","Q2","Q3","Q4"];
+  var quarters = ["Q1","Q2","Q3","Q4","Backlog"];
 
   var ph = function(lbl){return '<div class="mcard"><div class="mlabel">'+lbl+'</div><div class="mval-ph">—</div></div>';};
 
@@ -430,7 +441,7 @@ function renderRoadmap() {
       +"<td>"+i.theme+"</td>"
       +"<td>"+i.team+"</td>"
       +"<td>"+i.addedValue+"</td>"
-      +"<td>"+i.roi+"</td>"
+      +"<td>"+roiHtml(i.roi)+"</td>"
       +"<td>"+dsHtml(idx)+"</td>"
       +"</tr>";
   }).join("");
