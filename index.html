@@ -316,9 +316,9 @@ function roiCalcGroup(items){
 }
 function roiFmtAV(n){
   if(!n&&n!==0) return "—";
-  if(n>=1000000) return "$"+(n/1000000).toFixed(1)+"M";
-  if(n>=1000) return "$"+(n/1000).toFixed(0)+"K";
-  return "$"+n.toFixed(0);
+  if(n>=1000000) return "$"+(n/1000000).toFixed(2)+"M";
+  if(n>=1000) return "$"+(n/1000).toFixed(2)+"K";
+  return "$"+n.toFixed(2);
 }
 function roiMakeOverallCard(subset,label){
   var s=roiCalcGroup(subset);
