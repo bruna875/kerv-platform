@@ -742,8 +742,8 @@ function switchROIQuarter(q) {
   document.getElementById("roi-content").innerHTML =
     '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px">'+overallCard+groupCard("ROI by Driver","driver")+groupCard("ROI by Theme","theme")+groupCard("ROI by Team","team")+"</div>"
     +'<div class="twrap"><div class="thead-row">Initiatives</div><table>'
-    +"<thead><tr><th>Initiative</th><th>Driver</th><th>Team</th><th>Theme</th><th>Added Value</th><th>ROI</th></tr></thead>"
-    +"<tbody>"+subset.map(function(i){ return "<tr><td>"+i.title+"</td><td>"+i.driver+"</td><td>"+i.team+"</td><td>"+i.theme+"</td><td>"+fmtDollar(i.addedValue)+"</td><td>"+roiHtml(i.roi)+"</td></tr>"; }).join("")+"</tbody></table></div>";
+    +"<thead><tr><th>Quarter</th><th>Initiative</th><th>Driver</th><th>Team</th><th>Theme</th><th>Added Value</th><th>ROI</th></tr></thead>"
+    +"<tbody>"+subset.map(function(i){ return "<tr><td>"+i.quarter+"</td><td>"+i.title+"</td><td>"+i.driver+"</td><td>"+i.team+"</td><td>"+i.theme+"</td><td>"+fmtDollar(i.addedValue)+"</td><td>"+roiHtml(i.roi)+"</td></tr>"; }).join("")+"</tbody></table></div>";
 
   ["Q1","Q2","Q3","Q4","all"].forEach(function(btn){
     var el = document.getElementById("roi-btn-"+btn);
