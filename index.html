@@ -349,12 +349,12 @@ function roiMakeBarCard(subset,title,label,key){
     var barW=maxROI>0?Math.abs(pct)/maxROI*100:0;
     var barColor=pct<0?"#F09595":"#ED005E";
     var textColor=pct<0?"#E24B4A":"#ED005E";
-    return '<div style="display:flex;align-items:center;gap:10px">'
-      +'<div style="font-size:12px;color:var(--text);min-width:110px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+k+"</div>"
-      +'<div style="flex:1;height:20px;background:var(--bg);border-radius:4px;overflow:hidden">'
-      +'<div style="height:100%;width:'+barW+'%;background:'+barColor+';border-radius:4px"></div>'
+    return '<div style="display:flex;align-items:center;gap:10px;min-width:0">'
+      +'<div style="font-size:12px;color:var(--text);width:110px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+k+"</div>"
+      +'<div style="flex:1;min-width:0;height:20px;background:var(--bg);border-radius:4px;overflow:hidden">'
+      +'<div style="height:100%;width:'+barW+'%;background:'+barColor+';border-radius:4px;min-width:'+(barW>0?'4px':'0')+'"></div>'
       +"</div>"
-      +'<div style="font-size:12px;font-weight:500;color:'+textColor+';min-width:130px">'+pct+'% <span style="font-weight:400;color:var(--muted)">('+roiFmtAV(s.av)+")</span></div>"
+      +'<div style="font-size:12px;font-weight:500;color:'+textColor+';width:130px;flex-shrink:0">'+pct+'% <span style="font-weight:400;color:var(--muted)">('+roiFmtAV(s.av)+")</span></div>"
       +"</div>";
   }).join("");
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">'
