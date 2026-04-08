@@ -247,7 +247,35 @@ function currentQLabel(){var m=new Date().getMonth(),y=new Date().getFullYear();
 function fmtDollar(v){if(!v||v==="—")return "—";var n=parseFloat(String(v).replace(/[^0-9.-]/g,""));if(isNaN(n))return String(v);return "$"+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
 function roiHtml(v){if(!v||v==="—")return "—";var n=parseFloat(String(v).replace(/[^0-9.-]/g,""));if(isNaN(n))return String(v);var p=Math.round(n*100);return '<span style="color:'+(p<0?"#E24B4A":"#3B6D11")+';font-weight:500">'+p+"%</span>";}
 function pill(l,c){return '<span class="pill '+c+'">'+l+"</span>";}
-function dsHtml(idx){var cur=initiatives[idx].deliveryStatus,opt=deliveryOpts.filter(function(o){return o.val===cur;})[0]||deliveryOpts[0],opts=deliveryOpts.map(function(o){return '<option value="'+o.val+'"'+(o.val===cur?" selected":"")+">"+o.label+"</option>";}).join("");return '<div class="ds-wrap"><span class="pill ds-pill '+opt.cls+'">'+opt.label+'</span><select class="ds-select" onchange="updateStatus('+idx+',this.value)">'+opts+"</select></div>";}
+function dsHtml(idx){
+  var cur=initiatives[idx].deliveryStatus;
+  var opt=deliveryOpts.filter(function(o){return o.val===cur;})[0]||deliveryOpts[0];
+  return '<div class="ds-wrap" onclick="openStatusMenu(event,'+idx+')" style="cursor:pointer">'
+    +'<span class="pill ds-pill '+opt.cls+'" id="ds-pill-'+idx+'">'+opt.label+'</span>'
+    +'</div>';
+}
+
+function openStatusMenu(e,idx){
+  e.stopPropagation();
+  document.querySelectorAll(".status-menu").forEach(function(m){m.remove();});
+  var menu=document.createElement("div");
+  menu.className="status-menu";
+  menu.style.cssText="position:fixed;z-index:999;background:var(--surface);border:1px solid var(--border-md);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:4px;min-width:130px;";
+  deliveryOpts.forEach(function(o){
+    var item=document.createElement("div");
+    item.style.cssText="padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;";
+    item.innerHTML='<span class="pill '+o.cls+'" style="pointer-events:none">'+o.label+"</span>";
+    item.onmouseenter=function(){item.style.background="var(--bg)";};
+    item.onmouseleave=function(){item.style.background="";};
+    item.onclick=function(ev){ev.stopPropagation();updateStatus(idx,o.val);menu.remove();};
+    menu.appendChild(item);
+  });
+  var r=e.currentTarget.getBoundingClientRect();
+  menu.style.top=(r.bottom+4)+"px";
+  menu.style.left=r.left+"px";
+  document.body.appendChild(menu);
+  setTimeout(function(){document.addEventListener("click",function h(){menu.remove();document.removeEventListener("click",h);});},0);
+}
 function linkIcon(idx){var i=initiatives[idx],cls="link-btn"+(i.link?" has-link":"");return '<button class="'+cls+'" onclick="openLinkPopup(event,'+idx+')" title="'+(i.link?"Edit link":"Add link")+'"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5a4 4 0 005.66 0l2-2a4 4 0 00-5.66-5.66L7.44 2.94" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9.5 6.5a4 4 0 00-5.66 0l-2 2a4 4 0 005.66 5.66l1.06-1.06" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>';}
 function titleCellHtml(idx){var i=initiatives[idx],t=i.link?'<a href="'+i.link+'" target="_blank" class="init-title">'+i.title+"</a>":'<span class="init-title">'+i.title+"</span>";return '<div class="init-cell">'+t+linkIcon(idx)+"</div>";}
 
@@ -450,12 +478,8 @@ var PAGES={roadmap:renderRoadmap,capacity:renderCapacity};
 function updateStatus(idx,val){
   initiatives[idx].deliveryStatus=val;
   var opt=deliveryOpts.filter(function(o){return o.val===val;})[0]||deliveryOpts[0];
-  var rows=document.querySelectorAll("#rt-table table tbody tr");
-  if(rows[idx]){
-    var cell=rows[idx].cells[9];
-    var pip=cell.querySelector(".ds-pill");
-    if(pip){pip.className="pill ds-pill "+opt.cls;pip.textContent=opt.label;}
-  }
+  var pill=document.getElementById("ds-pill-"+idx);
+  if(pill){pill.className="pill ds-pill "+opt.cls;pill.textContent=opt.label;}
   var kanCards=document.querySelectorAll("#kanban-wrap .kancard");
   kanCards.forEach(function(card){
     var title=card.querySelector(".kancard-title");
