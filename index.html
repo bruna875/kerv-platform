@@ -240,39 +240,6 @@ function loadData(callback) {
   var el = document.getElementById("content");
   if (el) el.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:var(--muted)">Loading data...</div>';
 
-  var cbName = "kervCallback_" + Date.now();
-  window[cbName] = function(data) {
-    delete window[cbName];
-    document.head.removeChild(document.getElementById("jsonp-script"));
-    initiatives = (data.initiatives || []).map(function(i) {
-      return {
-        quarter:       String(i.quarter      || "").trim(),
-        title:         String(i.title        || "").trim(),
-        driver:        String(i.driver       || "").trim(),
-        team:          String(i.team         || "").trim(),
-        theme:         String(i.theme        || "").trim(),
-        productOwner:  String(i.productOwner || "").trim(),
-        techLead:      String(i.techLead     || "").trim(),
-        addedValue:    "—",
-        roi:           "—",
-        deliveryStatus:"on-track",
-        confidence:    "medium",
-        link:          ""
-      };
-    });
-    if (callback) callback();
-  };
-
-  var script = document.createElement("script");
-  script.id  = "jsonp-script";
-  script.src = SHEET_URL + "?callback=" + cbName;
-  script.onerror = function() {
-    if (el) el.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:#C0392B">Failed to load data. Check the Apps Script URL and permissions.</div>';
-    delete window[cbName];
-  };
-  document.head.appendChild(script);
-}
-
 var deliveryOpts = [
   {val:"on-track", label:"On Track", cls:"ds-green"},
   {val:"at-risk",  label:"At Risk",  cls:"ds-yellow"},
