@@ -271,8 +271,9 @@ function roiHtml(val) {
   if (!val || val === "—") return "—";
   var n = parseFloat(String(val).replace(/[^0-9.-]/g,""));
   if (isNaN(n)) return String(val);
-  var color = n < 0 ? "#A93226" : "#3B6D11";
-  return '<span style="color:'+color+';font-weight:500">'+Math.round(n)+"%</span>";
+  var pct = Math.round(n * 100);
+  var color = pct < 0 ? "#A93226" : "#3B6D11";
+  return '<span style="color:'+color+';font-weight:500">'+pct+"%</span>";
 }
 function pill(label,cls) {
   return '<span class="pill '+cls+'">'+label+"</span>";
