@@ -122,12 +122,6 @@ tr:hover td{background:#FAFAF8}
 .kancard-footer{display:flex;align-items:center;justify-content:space-between}
 .kancard-roi{font-size:11px;font-weight:500;color:var(--text)}
 .init-cell{display:flex;align-items:center;gap:5px}
-/* FILTERS */
-.filterbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-.filterbar select{height:30px;border:1px solid var(--border-md);border-radius:7px;padding:0 28px 0 10px;font-size:12px;font-family:inherit;color:var(--muted);background:var(--surface);outline:none;cursor:pointer;transition:border .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A8A8A0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
-.filterbar select.active{border-color:var(--accent);color:var(--text)}
-.filter-reset{height:30px;padding:0 12px;border:1px solid var(--border-md);border-radius:7px;font-size:12px;font-family:inherit;color:var(--muted);background:none;cursor:pointer;transition:color .15s,border-color .15s}
-.filter-reset:hover{color:var(--accent);border-color:var(--accent)}
 .init-title{color:inherit;text-decoration:none}
 a.init-title:hover{text-decoration:underline;color:var(--accent)}
 .link-btn{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;cursor:pointer;color:var(--faint);opacity:0;transition:opacity .15s,color .15s,background .15s;flex-shrink:0;border:none;background:none;padding:0}
@@ -146,6 +140,11 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 .link-popup-save:hover{opacity:.88}
 .link-popup-clear{height:34px;padding:0 10px;background:none;border:1px solid var(--border-md);border-radius:7px;font-size:12px;font-family:inherit;cursor:pointer;color:var(--muted);flex-shrink:0}
 .link-popup-clear:hover{border-color:var(--accent);color:var(--accent)}
+.filterbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.filterbar select{height:30px;border:1px solid var(--border-md);border-radius:7px;padding:0 28px 0 10px;font-size:12px;font-family:inherit;color:var(--muted);background:var(--surface);outline:none;cursor:pointer;transition:border .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A8A8A0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.filterbar select.active{border-color:var(--accent);color:var(--text)}
+.filter-reset{height:30px;padding:0 12px;border:1px solid var(--border-md);border-radius:7px;font-size:12px;font-family:inherit;color:var(--muted);background:none;cursor:pointer;transition:color .15s,border-color .15s}
+.filter-reset:hover{color:var(--accent);border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -232,170 +231,137 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 </div>
 
 <script>
-var SHEET_URL = "https://script.google.com/macros/s/AKfycbwFrVCmNoPCZ7OiDlM1bUaYrf7K9Na5Uq1-5SSfywzGYNgA3ut-pLlPzxUvaXzb3-CC/exec";
-
 var initiatives = [];
-
-function loadData(callback) {
-  var el = document.getElementById("content");
-  if (el) el.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:var(--muted)">Loading data...</div>';
 
 var deliveryOpts = [
   {val:"on-track", label:"On Track", cls:"ds-green"},
   {val:"at-risk",  label:"At Risk",  cls:"ds-yellow"},
   {val:"delayed",  label:"Delayed",  cls:"ds-red"}
 ];
-
 var confClass = {high:"p-done", medium:"p-prog", low:"p-plan"};
-
 var NAV_CONFIG = [
   {section:"Product", items:[
     {id:"roadmap",  label:"Product Roadmap", icon:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="7" width="10" height="2" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="11" width="6" height="2" rx="1" fill="currentColor" opacity=".3"/><circle cx="13" cy="8" r="2.5" fill="currentColor"/></svg>'},
     {id:"capacity", label:"Team Capacity",   icon:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" fill="currentColor" opacity=".7"/><circle cx="11.5" cy="5" r="2" fill="currentColor" opacity=".4"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".7"/><path d="M11.5 8c1.7 0 3 1.3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/></svg>'}
   ]}
 ];
-
 var activeId = "roadmap";
 var collapsed = false;
 var _linkIdx  = null;
 
-/* ---- UTILS ---- */
 function currentQ() {
-  var m = new Date().getMonth(), y = new Date().getFullYear();
+  var m = new Date().getMonth();
   return "Q" + (m < 3 ? 1 : m < 6 ? 2 : m < 9 ? 3 : 4);
 }
-
 function currentQLabel() {
   var m = new Date().getMonth(), y = new Date().getFullYear();
   return "Q" + (m < 3 ? 1 : m < 6 ? 2 : m < 9 ? 3 : 4) + " " + y;
 }
-
-function roiNum(str) {
-  return parseInt(str.replace(/[^0-9]/g, "")) || 0;
-}
-
-function roiStr(n) {
-  return n >= 1000 ? "$" + (n / 1000).toFixed(0) + "K" : "$" + n;
-}
-
-function pill(label, cls) {
-  return '<span class="pill ' + cls + '">' + label + "</span>";
-}
+function roiNum(str) { return parseInt((str||"").replace(/[^0-9]/g,"")) || 0; }
+function roiStr(n)   { return n >= 1000 ? "$"+(n/1000).toFixed(0)+"K" : "$"+n; }
+function pill(label,cls) { return '<span class="pill '+cls+'">'+label+"</span>"; }
 
 function dsHtml(idx) {
   var cur = initiatives[idx].deliveryStatus;
-  var opt = deliveryOpts.filter(function(o) { return o.val === cur; })[0];
-  var opts = deliveryOpts.map(function(o) {
-    return '<option value="' + o.val + '"' + (o.val === cur ? " selected" : "") + ">" + o.label + "</option>";
+  var opt = deliveryOpts.filter(function(o){return o.val===cur;})[0];
+  var opts = deliveryOpts.map(function(o){
+    return '<option value="'+o.val+'"'+(o.val===cur?" selected":"")+">"+o.label+"</option>";
   }).join("");
-  return '<div class="ds-wrap">'
-    + '<span class="pill ds-pill ' + opt.cls + '">' + opt.label + "</span>"
-    + '<select class="ds-select" onchange="updateStatus(' + idx + ',this.value)">' + opts + "</select>"
-    + "</div>";
+  return '<div class="ds-wrap"><span class="pill ds-pill '+opt.cls+'">'+opt.label+"</span>"
+    +'<select class="ds-select" onchange="updateStatus('+idx+',this.value)">'+opts+"</select></div>";
 }
 
 function linkIcon(idx) {
   var i = initiatives[idx];
-  var cls = "link-btn" + (i.link ? " has-link" : "");
+  var cls = "link-btn"+(i.link?" has-link":"");
   var tip = i.link ? "Edit link" : "Add link";
-  return '<button class="' + cls + '" onclick="openLinkPopup(event,' + idx + ')" title="' + tip + '">'
-    + '<svg width="12" height="12" viewBox="0 0 16 16" fill="none">'
-    + '<path d="M6.5 9.5a4 4 0 005.66 0l2-2a4 4 0 00-5.66-5.66L7.44 2.94" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
-    + '<path d="M9.5 6.5a4 4 0 00-5.66 0l-2 2a4 4 0 005.66 5.66l1.06-1.06" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
-    + "</svg></button>";
+  return '<button class="'+cls+'" onclick="openLinkPopup(event,'+idx+')" title="'+tip+'">'
+    +'<svg width="12" height="12" viewBox="0 0 16 16" fill="none">'
+    +'<path d="M6.5 9.5a4 4 0 005.66 0l2-2a4 4 0 00-5.66-5.66L7.44 2.94" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+    +'<path d="M9.5 6.5a4 4 0 00-5.66 0l-2 2a4 4 0 005.66 5.66l1.06-1.06" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+    +"</svg></button>";
 }
 
 function titleCellHtml(idx) {
   var i = initiatives[idx];
   var t = i.link
-    ? '<a href="' + i.link + '" target="_blank" class="init-title">' + i.title + "</a>"
-    : '<span class="init-title">' + i.title + "</span>";
-  return '<div class="init-cell">' + t + linkIcon(idx) + "</div>";
+    ? '<a href="'+i.link+'" target="_blank" class="init-title">'+i.title+"</a>"
+    : '<span class="init-title">'+i.title+"</span>";
+  return '<div class="init-cell">'+t+linkIcon(idx)+"</div>";
 }
 
-/* ---- SCORECARDS ---- */
 function scInitiatives() {
   var cq = currentQ();
-  var inQ = initiatives.filter(function(i) { return i.quarter === cq; });
-  var onT = inQ.filter(function(i) { return i.deliveryStatus === "on-track"; }).length;
-  var atR = inQ.filter(function(i) { return i.deliveryStatus === "at-risk";  }).length;
-  var del = inQ.filter(function(i) { return i.deliveryStatus === "delayed";  }).length;
+  var inQ = initiatives.filter(function(i){return i.quarter===cq;});
+  var onT = inQ.filter(function(i){return i.deliveryStatus==="on-track";}).length;
+  var atR = inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length;
+  var del = inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;
   return '<div class="mcard" id="sc-init">'
-    + '<div class="mlabel">Initiatives <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">' + cq + "</span></div>"
-    + '<div class="mval" id="sc-total">' + inQ.length + "</div>"
-    + '<div class="sc-badges">'
-    + '<span class="sc-badge ds-green"><span id="sc-ontrack">' + onT + "</span> On Track</span>"
-    + '<span class="sc-badge ds-yellow"><span id="sc-atrisk">' + atR + "</span> At Risk</span>"
-    + '<span class="sc-badge ds-red"><span id="sc-delayed">' + del + "</span> Delayed</span>"
-    + "</div></div>";
+    +'<div class="mlabel">Initiatives <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">'+currentQLabel()+"</span></div>"
+    +'<div class="mval" id="sc-total">'+inQ.length+"</div>"
+    +'<div class="sc-badges">'
+    +'<span class="sc-badge ds-green"><span id="sc-ontrack">'+onT+"</span> On Track</span>"
+    +'<span class="sc-badge ds-yellow"><span id="sc-atrisk">'+atR+"</span> At Risk</span>"
+    +'<span class="sc-badge ds-red"><span id="sc-delayed">'+del+"</span> Delayed</span>"
+    +"</div></div>";
 }
 
 function scGrouped(id, label, key) {
   var cq = currentQ();
-  var inQ = initiatives.filter(function(i) { return i.quarter === cq; });
+  var inQ = initiatives.filter(function(i){return i.quarter===cq;});
   var groups = {};
-  inQ.forEach(function(i) {
+  inQ.forEach(function(i){
     var k = i[key];
-    if (!groups[k]) groups[k] = {"on-track":0,"at-risk":0,"delayed":0};
+    if(!groups[k]) groups[k] = {"on-track":0,"at-risk":0,"delayed":0};
     groups[k][i.deliveryStatus]++;
   });
-  var rows = Object.keys(groups).map(function(k) {
+  var rows = Object.keys(groups).map(function(k){
     var g = groups[k];
     var pills = "";
-    if (g["on-track"] > 0) pills += '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#EAF3DE;color:#3B6D11">' + g["on-track"] + "</span>";
-    if (g["at-risk"]  > 0) pills += '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FAEEDA;color:#854F0B">'  + g["at-risk"]  + "</span>";
-    if (g["delayed"]  > 0) pills += '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FDECEA;color:#A93226">'  + g["delayed"]  + "</span>";
+    if(g["on-track"]>0) pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#EAF3DE;color:#3B6D11">'+g["on-track"]+"</span>";
+    if(g["at-risk"] >0) pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FAEEDA;color:#854F0B">'+g["at-risk"]+"</span>";
+    if(g["delayed"] >0) pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FDECEA;color:#A93226">'+g["delayed"]+"</span>";
     return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-      + '<span style="font-size:12px;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + k + "</span>"
-      + '<div style="display:flex;gap:3px;flex-shrink:0">' + pills + "</div>"
-      + "</div>";
+      +'<span style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+k+"</span>"
+      +'<div style="display:flex;gap:3px;flex-shrink:0">'+pills+"</div></div>";
   }).join("");
-  var legend = '<div style="display:flex;gap:10px;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">'
-    + '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary)"><span style="width:7px;height:7px;border-radius:50%;background:#3B6D11;display:inline-block"></span>On Track</span>'
-    + '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary)"><span style="width:7px;height:7px;border-radius:50%;background:#854F0B;display:inline-block"></span>At Risk</span>'
-    + '<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary)"><span style="width:7px;height:7px;border-radius:50%;background:#A93226;display:inline-block"></span>Delayed</span>'
-    + "</div>";
-  return '<div class="mcard" id="' + id + '">'
-    + '<div class="mlabel">' + label + ' <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">' + cq + "</span></div>"
-    + '<div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">' + rows + "</div>"
-    + "</div>";
+  return '<div class="mcard" id="'+id+'">'
+    +'<div class="mlabel">'+label+' <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">'+currentQLabel()+"</span></div>"
+    +'<div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">'+rows+"</div></div>";
 }
 
 function refreshSc() {
-  if (!document.getElementById("sc-init")) return;
+  if(!document.getElementById("sc-init")) return;
   var cq = currentQ();
-  var inQ = initiatives.filter(function(i) { return i.quarter === cq; });
+  var inQ = initiatives.filter(function(i){return i.quarter===cq;});
   document.getElementById("sc-total").textContent   = inQ.length;
-  document.getElementById("sc-ontrack").textContent = inQ.filter(function(i) { return i.deliveryStatus === "on-track"; }).length;
-  document.getElementById("sc-atrisk").textContent  = inQ.filter(function(i) { return i.deliveryStatus === "at-risk";  }).length;
-  document.getElementById("sc-delayed").textContent = inQ.filter(function(i) { return i.deliveryStatus === "delayed";  }).length;
+  document.getElementById("sc-ontrack").textContent = inQ.filter(function(i){return i.deliveryStatus==="on-track";}).length;
+  document.getElementById("sc-atrisk").textContent  = inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length;
+  document.getElementById("sc-delayed").textContent = inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;
 }
 
-/* ---- PAGES ---- */
 function buildFilterOptions(key) {
   var vals = [];
-  initiatives.forEach(function(i) {
-    if (vals.indexOf(i[key]) === -1) vals.push(i[key]);
-  });
+  initiatives.forEach(function(i){if(vals.indexOf(i[key])===-1) vals.push(i[key]);});
   vals.sort();
-  return vals.map(function(v) { return '<option value="' + v + '">' + v + "</option>"; }).join("");
+  return vals.map(function(v){return '<option value="'+v+'">'+v+"</option>";}).join("");
 }
 
 function buildFilterBar(suffix) {
   var s = suffix || "";
-  var dsOpts = deliveryOpts.map(function(o) { return '<option value="' + o.val + '">' + o.label + "</option>"; }).join("");
+  var dsOpts = deliveryOpts.map(function(o){return '<option value="'+o.val+'">'+o.label+"</option>";}).join("");
   var onChange = s ? "applyFiltersKanban()" : "applyFilters()";
   var onReset  = s ? "resetFiltersKanban()" : "resetFilters()";
-  return '<div class="filterbar" id="filterbar' + s + '">'
-    + '<select id="f-quarter'  + s + '" onchange="' + onChange + '"><option value="">All Quarters</option>'      + buildFilterOptions("quarter")      + "</select>"
-    + '<select id="f-driver'   + s + '" onchange="' + onChange + '"><option value="">All Drivers</option>'       + buildFilterOptions("driver")       + "</select>"
-    + '<select id="f-team'     + s + '" onchange="' + onChange + '"><option value="">All Teams</option>'         + buildFilterOptions("team")         + "</select>"
-    + '<select id="f-theme'    + s + '" onchange="' + onChange + '"><option value="">All Themes</option>'        + buildFilterOptions("theme")        + "</select>"
-    + '<select id="f-po'       + s + '" onchange="' + onChange + '"><option value="">All Product Owners</option>'+ buildFilterOptions("productOwner") + "</select>"
-    + '<select id="f-tl'       + s + '" onchange="' + onChange + '"><option value="">All Tech Leads</option>'    + buildFilterOptions("techLead")     + "</select>"
-    + '<select id="f-status'   + s + '" onchange="' + onChange + '"><option value="">All Statuses</option>'      + dsOpts                             + "</select>"
-    + '<button class="filter-reset" onclick="' + onReset + '">Reset</button>'
-    + "</div>";
+  return '<div class="filterbar" id="filterbar'+s+'">'
+    +'<select id="f-quarter'+s+'" onchange="'+onChange+'"><option value="">All Quarters</option>'+buildFilterOptions("quarter")+"</select>"
+    +'<select id="f-driver'+s+'" onchange="'+onChange+'"><option value="">All Drivers</option>'+buildFilterOptions("driver")+"</select>"
+    +'<select id="f-team'+s+'" onchange="'+onChange+'"><option value="">All Teams</option>'+buildFilterOptions("team")+"</select>"
+    +'<select id="f-theme'+s+'" onchange="'+onChange+'"><option value="">All Themes</option>'+buildFilterOptions("theme")+"</select>"
+    +'<select id="f-po'+s+'" onchange="'+onChange+'"><option value="">All Product Owners</option>'+buildFilterOptions("productOwner")+"</select>"
+    +'<select id="f-tl'+s+'" onchange="'+onChange+'"><option value="">All Tech Leads</option>'+buildFilterOptions("techLead")+"</select>"
+    +'<select id="f-status'+s+'" onchange="'+onChange+'"><option value="">All Statuses</option>'+dsOpts+"</select>"
+    +'<button class="filter-reset" onclick="'+onReset+'">Reset</button>'
+    +"</div>";
 }
 
 function applyFilters() {
@@ -403,7 +369,7 @@ function applyFilters() {
       ft=document.getElementById("f-team").value,    fth=document.getElementById("f-theme").value,
       fpo=document.getElementById("f-po").value,     ftl=document.getElementById("f-tl").value,
       fs=document.getElementById("f-status").value;
-  document.querySelectorAll("#rt-table table tbody tr").forEach(function(row,idx) {
+  document.querySelectorAll("#rt-table table tbody tr").forEach(function(row,idx){
     var i=initiatives[idx];
     row.style.display=(!fq||i.quarter===fq)&&(!fd||i.driver===fd)&&(!ft||i.team===ft)
       &&(!fth||i.theme===fth)&&(!fpo||i.productOwner===fpo)&&(!ftl||i.techLead===ftl)
@@ -428,7 +394,7 @@ function applyFiltersKanban() {
       ft=document.getElementById("f-teamq").value,    fth=document.getElementById("f-themeq").value,
       fpo=document.getElementById("f-poq").value,     ftl=document.getElementById("f-tlq").value,
       fs=document.getElementById("f-statusq").value;
-  document.querySelectorAll("#kanban-wrap .kancard").forEach(function(card,idx) {
+  document.querySelectorAll("#kanban-wrap .kancard").forEach(function(card,idx){
     var i=initiatives[idx];
     if(!i) return;
     card.style.display=(!fq||i.quarter===fq)&&(!fd||i.driver===fd)&&(!ft||i.team===ft)
@@ -449,194 +415,150 @@ function resetFiltersKanban() {
   document.querySelectorAll("#kanban-wrap .kancard").forEach(function(card){card.style.display="";});
 }
 
-function scPOs() {
-  var cq = currentQ();
-  var inQ = initiatives.filter(function(i) { return i.quarter === cq; });
-  var pos = {};
-  inQ.forEach(function(i) {
-    var k = i.productOwner;
-    if (!pos[k]) pos[k] = {"on-track":0,"at-risk":0,"delayed":0};
-    pos[k][i.deliveryStatus]++;
-  });
-  var cards = Object.keys(pos).map(function(k) {
-    var g = pos[k];
-    var total = g["on-track"] + g["at-risk"] + g["delayed"];
-    var pills = "";
-    if (g["on-track"] > 0) pills += '<span style="font-size:10px;font-weight:500;padding:1px 6px;border-radius:20px;background:#EAF3DE;color:#3B6D11">' + g["on-track"] + "</span>";
-    if (g["at-risk"]  > 0) pills += '<span style="font-size:10px;font-weight:500;padding:1px 6px;border-radius:20px;background:#FAEEDA;color:#854F0B">'  + g["at-risk"]  + "</span>";
-    if (g["delayed"]  > 0) pills += '<span style="font-size:10px;font-weight:500;padding:1px 6px;border-radius:20px;background:#FDECEA;color:#A93226">'  + g["delayed"]  + "</span>";
-    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">'
-      + '<div style="font-size:11px;font-weight:500;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + k + "</div>"
-      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-      + '<span style="font-size:18px;font-weight:500;letter-spacing:-.5px">' + total + "</span>"
-      + '<div style="display:flex;gap:3px">' + pills + "</div>"
-      + "</div></div>";
-  }).join("");
-  return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:24px">' + cards + "</div>";
-}
-
 function renderRoadmap() {
-  var quarters = ["Q1 2026","Q2 2026","Q3 2026","Q4 2026"];
+  var quarters = ["Q1","Q2","Q3","Q4"];
 
-  var ph = function(lbl) {
-    return '<div class="mcard"><div class="mlabel">' + lbl + '</div><div class="mval-ph">—</div></div>';
-  };
+  var ph = function(lbl){return '<div class="mcard"><div class="mlabel">'+lbl+'</div><div class="mval-ph">—</div></div>';};
 
-  var tableRows = initiatives.map(function(i, idx) {
+  var tableRows = initiatives.map(function(i,idx){
     return "<tr>"
-      + "<td>" + i.quarter + "</td>"
-      + "<td>" + titleCellHtml(idx) + "</td>"
-      + "<td>" + i.driver + "</td>"
-      + "<td>" + i.productOwner + "</td>"
-      + "<td>" + i.techLead + "</td>"
-      + "<td>" + i.theme + "</td>"
-      + "<td>" + i.team + "</td>"
-      + "<td>" + i.addedValue + "</td>"
-      + "<td>" + i.roi + "</td>"
-      + "<td>" + dsHtml(idx) + "</td>"
-      + "</tr>";
+      +"<td>"+i.quarter+"</td>"
+      +"<td>"+titleCellHtml(idx)+"</td>"
+      +"<td>"+i.driver+"</td>"
+      +"<td>"+i.productOwner+"</td>"
+      +"<td>"+i.techLead+"</td>"
+      +"<td>"+i.theme+"</td>"
+      +"<td>"+i.team+"</td>"
+      +"<td>"+i.addedValue+"</td>"
+      +"<td>"+i.roi+"</td>"
+      +"<td>"+dsHtml(idx)+"</td>"
+      +"</tr>";
   }).join("");
 
-  var kanban = quarters.map(function(q) {
-    var items = initiatives.filter(function(i) { return i.quarter === q; });
-    var cards = items.map(function(i) {
+  var kanban = quarters.map(function(q){
+    var items = initiatives.filter(function(i){return i.quarter===q;});
+    var cards = items.map(function(i){
       var idx = initiatives.indexOf(i);
-      var opt = deliveryOpts.filter(function(o) { return o.val === i.deliveryStatus; })[0];
-      var opts = deliveryOpts.map(function(o) {
-        return '<option value="' + o.val + '"' + (o.val === i.deliveryStatus ? " selected" : "") + ">" + o.label + "</option>";
+      var opt = deliveryOpts.filter(function(o){return o.val===i.deliveryStatus;})[0];
+      var opts = deliveryOpts.map(function(o){
+        return '<option value="'+o.val+'"'+(o.val===i.deliveryStatus?" selected":"")+">"+o.label+"</option>";
       }).join("");
       return '<div class="kancard">'
-        + '<div class="kancard-header">'
-        + '<span class="kancard-title">' + i.title + "</span>"
-        + '<span class="kancard-tags">' + i.theme + " · " + i.team + "</span>"
-        + "</div>"
-        + '<div class="kancard-leads">'
-        + '<span class="kancard-lead-item"><span class="kancard-lead-label">PO</span> ' + i.productOwner + "</span>"
-        + '<span class="kancard-lead-item"><span class="kancard-lead-label">TL</span> ' + i.techLead + "</span>"
-        + "</div>"
-        + '<div class="kancard-driver"><span class="kancard-lead-label">Driver</span> ' + i.driver + "</div>"
-        + '<div class="kancard-footer">'
-        + '<div class="ds-wrap"><span class="pill ds-pill ' + opt.cls + '">' + opt.label + "</span>"
-        + '<select class="ds-select" onchange="updateStatus(' + idx + ',this.value)">' + opts + "</select></div>"
-        + '<span class="kancard-roi">' + i.roi + "</span>"
-        + "</div></div>";
+        +'<div class="kancard-header"><span class="kancard-title">'+i.title+"</span>"
+        +'<span class="kancard-tags">'+i.theme+" · "+i.team+"</span></div>"
+        +'<div class="kancard-leads">'
+        +'<span class="kancard-lead-item"><span class="kancard-lead-label">PO</span> '+i.productOwner+"</span>"
+        +'<span class="kancard-lead-item"><span class="kancard-lead-label">TL</span> '+i.techLead+"</span>"
+        +"</div>"
+        +'<div class="kancard-driver"><span class="kancard-lead-label">Driver</span> '+i.driver+"</div>"
+        +'<div class="kancard-footer">'
+        +'<div class="ds-wrap"><span class="pill ds-pill '+opt.cls+'">'+opt.label+"</span>"
+        +'<select class="ds-select" onchange="updateStatus('+idx+',this.value)">'+opts+"</select></div>"
+        +'<span class="kancard-roi">'+i.roi+"</span>"
+        +"</div></div>";
     }).join("");
     return '<div class="kancol">'
-      + '<div class="kancol-head"><span>' + q + "</span>"
-      + '<span class="kancol-count">' + items.length + "</span></div>"
-      + '<div class="kancol-body">' + (cards || '<div style="padding:8px;font-size:12px;color:var(--faint)">No initiatives</div>') + "</div>"
-      + "</div>";
+      +'<div class="kancol-head"><span>'+q+"</span>"
+      +'<span class="kancol-count">'+items.length+"</span></div>"
+      +'<div class="kancol-body">'+(cards||'<div style="padding:8px;font-size:12px;color:var(--faint)">No initiatives</div>')+"</div></div>";
   }).join("");
 
-  var roiRows = initiatives.slice().sort(function(a,b) { return roiNum(b.roi) - roiNum(a.roi); }).map(function(i) {
-    var conf = i.confidence.charAt(0).toUpperCase() + i.confidence.slice(1);
-    return "<tr><td>" + i.title + "</td><td>" + i.productOwner + "</td><td>" + i.roi + "</td><td>" + pill(conf, confClass[i.confidence]) + "</td></tr>";
+  var roiRows = initiatives.slice().sort(function(a,b){return roiNum(b.roi)-roiNum(a.roi);}).map(function(i){
+    var conf = i.confidence.charAt(0).toUpperCase()+i.confidence.slice(1);
+    return "<tr><td>"+i.title+"</td><td>"+i.productOwner+"</td><td>"+i.roi+"</td><td>"+pill(conf,confClass[i.confidence])+"</td></tr>";
   }).join("");
 
   return '<div class="ptitle">Product Roadmap</div>'
-    + '<div class="psub">Quarterly initiatives and progress status</div>'
-    + '<div class="tabnav">'
-    + '<button class="tabitem act" onclick="switchTab(this,\'table\')">Table View</button>'
-    + '<button class="tabitem" onclick="switchTab(this,\'quarterly\')">Quarterly</button>'
-    + '<button class="tabitem" onclick="switchTab(this,\'roi\')">By ROI</button>'
-    + "</div>"
-    + '<div id="rt-table" class="tabpanel act">'
-    + '<div class="cards">'
-    + scInitiatives()
-    + scGrouped("sc-driver", "By Driver", "driver")
-    + scGrouped("sc-theme",  "By Theme",  "theme")
-    + scGrouped("sc-team",   "By Team",   "team")
-    + "</div>"
-
-    + '<div class="twrap"><div class="thead-row">Initiatives</div>'
-    + '<div style="padding:12px 18px 4px">' + buildFilterBar() + '</div>'
-    + '<table>'
-    + "<thead><tr><th>Quarter</th><th>Initiative</th><th>Driver</th><th>Product Owner</th><th>Tech Lead</th><th>Theme</th><th>Team</th><th>Added Value</th><th>ROI</th><th>Status</th></tr></thead>"
-    + "<tbody>" + tableRows + "</tbody></table></div>"
-    + "</div>"
-    + '<div id="rt-quarterly" class="tabpanel">'
-    + '<div class="cards">'
-    + scInitiatives()
-    + scGrouped("sc-driver-q", "By Driver", "driver")
-    + scGrouped("sc-theme-q",  "By Theme",  "theme")
-    + scGrouped("sc-team-q",   "By Team",   "team")
-    + "</div>"
-    + '<div style="margin-bottom:16px">' + buildFilterBar("q") + "</div>"
-    + '<div class="kanban" id="kanban-wrap">' + kanban + "</div>"
-    + "</div>"
-    + '<div id="rt-roi" class="tabpanel">'
-    + '<div class="cards">' + ph("Placeholder 1") + ph("Placeholder 2") + ph("Placeholder 3") + ph("Placeholder 4") + "</div>"
-    + '<div class="twrap"><div class="thead-row">Initiatives by ROI Estimate</div><table>'
-    + "<thead><tr><th>Initiative</th><th>Owner</th><th>Est. ROI</th><th>Confidence</th></tr></thead>"
-    + "<tbody>" + roiRows + "</tbody></table></div>"
-    + "</div>";
+    +'<div class="psub">Quarterly initiatives and progress status</div>'
+    +'<div class="tabnav">'
+    +'<button class="tabitem act" onclick="switchTab(this,\'table\')">Table View</button>'
+    +'<button class="tabitem" onclick="switchTab(this,\'quarterly\')">Quarterly</button>'
+    +'<button class="tabitem" onclick="switchTab(this,\'roi\')">By ROI</button>'
+    +"</div>"
+    +'<div id="rt-table" class="tabpanel act">'
+    +'<div class="cards">'+scInitiatives()+scGrouped("sc-driver","By Driver","driver")+scGrouped("sc-theme","By Theme","theme")+scGrouped("sc-team","By Team","team")+"</div>"
+    +'<div class="twrap"><div class="thead-row">Initiatives</div>'
+    +'<div style="padding:12px 18px 4px">'+buildFilterBar()+"</div>"
+    +"<table><thead><tr><th>Quarter</th><th>Initiative</th><th>Driver</th><th>Product Owner</th><th>Tech Lead</th><th>Theme</th><th>Team</th><th>Added Value</th><th>ROI</th><th>Status</th></tr></thead>"
+    +"<tbody>"+tableRows+"</tbody></table></div>"
+    +"</div>"
+    +'<div id="rt-quarterly" class="tabpanel">'
+    +'<div class="cards">'+scInitiatives()+scGrouped("sc-driver-q","By Driver","driver")+scGrouped("sc-theme-q","By Theme","theme")+scGrouped("sc-team-q","By Team","team")+"</div>"
+    +'<div style="margin-bottom:16px">'+buildFilterBar("q")+"</div>"
+    +'<div class="kanban" id="kanban-wrap">'+kanban+"</div>"
+    +"</div>"
+    +'<div id="rt-roi" class="tabpanel">'
+    +'<div class="cards">'+ph("Placeholder 1")+ph("Placeholder 2")+ph("Placeholder 3")+ph("Placeholder 4")+"</div>"
+    +'<div class="twrap"><div class="thead-row">Initiatives by ROI Estimate</div><table>'
+    +"<thead><tr><th>Initiative</th><th>Owner</th><th>Est. ROI</th><th>Confidence</th></tr></thead>"
+    +"<tbody>"+roiRows+"</tbody></table></div>"
+    +"</div>";
 }
 
 function renderCapacity() {
   return '<div class="ptitle">Team Capacity</div>'
-    + '<div class="psub">Resource allocation and availability by team</div>'
-    + '<div class="cards" style="grid-template-columns:repeat(3,minmax(0,1fr))">'
-    + '<div class="mcard"><div class="mlabel">Total Members</div><div class="mval">32</div><div class="mdelta">+2 this quarter</div></div>'
-    + '<div class="mcard"><div class="mlabel">Avg. Utilization</div><div class="mval">78%</div><div class="mdelta" style="color:#185FA5">Within range</div></div>'
-    + '<div class="mcard"><div class="mlabel">Open Positions</div><div class="mval">4</div><div class="mdelta">Active hiring</div></div>'
-    + "</div>"
-    + '<div class="twrap"><div class="thead-row">Teams</div><table>'
-    + "<thead><tr><th>Team</th><th>Lead</th><th>Members</th><th>Utilization</th></tr></thead>"
-    + "<tbody>"
-    + "<tr><td>Platform Engineering</td><td>Liu W.</td><td>8</td><td>" + pill("92%","p-done") + "</td></tr>"
-    + "<tr><td>Product Design</td><td>Ana C.</td><td>5</td><td>" + pill("74%","p-prog") + "</td></tr>"
-    + "<tr><td>Data and Analytics</td><td>James K.</td><td>6</td><td>" + pill("81%","p-prog") + "</td></tr>"
-    + "<tr><td>Mobile</td><td>Sara B.</td><td>4</td><td>" + pill("60%","p-plan") + "</td></tr>"
-    + "<tr><td>Growth</td><td>Marco R.</td><td>9</td><td>" + pill("88%","p-done") + "</td></tr>"
-    + "</tbody></table></div>";
+    +'<div class="psub">Resource allocation and availability by team</div>'
+    +'<div class="cards" style="grid-template-columns:repeat(3,minmax(0,1fr))">'
+    +'<div class="mcard"><div class="mlabel">Total Members</div><div class="mval">32</div><div class="mdelta">+2 this quarter</div></div>'
+    +'<div class="mcard"><div class="mlabel">Avg. Utilization</div><div class="mval">78%</div><div class="mdelta" style="color:#185FA5">Within range</div></div>'
+    +'<div class="mcard"><div class="mlabel">Open Positions</div><div class="mval">4</div><div class="mdelta">Active hiring</div></div>'
+    +"</div>"
+    +'<div class="twrap"><div class="thead-row">Teams</div><table>'
+    +"<thead><tr><th>Team</th><th>Lead</th><th>Members</th><th>Utilization</th></tr></thead>"
+    +"<tbody>"
+    +"<tr><td>Platform Engineering</td><td>Liu W.</td><td>8</td><td>"+pill("92%","p-done")+"</td></tr>"
+    +"<tr><td>Product Design</td><td>Ana C.</td><td>5</td><td>"+pill("74%","p-prog")+"</td></tr>"
+    +"<tr><td>Data and Analytics</td><td>James K.</td><td>6</td><td>"+pill("81%","p-prog")+"</td></tr>"
+    +"<tr><td>Mobile</td><td>Sara B.</td><td>4</td><td>"+pill("60%","p-plan")+"</td></tr>"
+    +"<tr><td>Growth</td><td>Marco R.</td><td>9</td><td>"+pill("88%","p-done")+"</td></tr>"
+    +"</tbody></table></div>";
 }
 
-var PAGES = {roadmap: renderRoadmap, capacity: renderCapacity};
+var PAGES = {roadmap:renderRoadmap, capacity:renderCapacity};
 
-/* ---- ACTIONS ---- */
-function updateStatus(idx, val) {
+function updateStatus(idx,val) {
   initiatives[idx].deliveryStatus = val;
   var rows = document.querySelectorAll("#rt-table table tbody tr");
-  if (rows[idx]) rows[idx].cells[9].innerHTML = dsHtml(idx);
+  if(rows[idx]) rows[idx].cells[9].innerHTML = dsHtml(idx);
   refreshSc();
 }
 
 function openCurrentLink() {
   var url = document.getElementById("linkInput").value.trim();
-  if (url) window.open(url, "_blank");
+  if(url) window.open(url,"_blank");
 }
 
-function openLinkPopup(e, idx) {
+function openLinkPopup(e,idx) {
   e.stopPropagation();
   _linkIdx = idx;
   var pop = document.getElementById("linkPopup");
-  document.getElementById("linkInput").value = initiatives[idx].link || "";
+  document.getElementById("linkInput").value = initiatives[idx].link||"";
   document.getElementById("linkOpenBtn").disabled = !initiatives[idx].link;
   var r = e.currentTarget.getBoundingClientRect();
-  pop.style.top  = (r.bottom + 6) + "px";
-  pop.style.left = Math.min(r.left, window.innerWidth - 316) + "px";
+  pop.style.top  = (r.bottom+6)+"px";
+  pop.style.left = Math.min(r.left,window.innerWidth-316)+"px";
   pop.classList.add("show");
-  setTimeout(function() { document.getElementById("linkInput").focus(); }, 50);
+  setTimeout(function(){document.getElementById("linkInput").focus();},50);
 }
 
 function saveLink() {
-  if (_linkIdx === null) return;
+  if(_linkIdx===null) return;
   var idx = _linkIdx;
   initiatives[idx].link = document.getElementById("linkInput").value.trim();
   document.getElementById("linkPopup").classList.remove("show");
   _linkIdx = null;
   var rows = document.querySelectorAll("#rt-table table tbody tr");
-  if (rows[idx]) rows[idx].cells[1].innerHTML = titleCellHtml(idx);
+  if(rows[idx]) rows[idx].cells[1].innerHTML = titleCellHtml(idx);
 }
 
 function clearLink() {
-  if (_linkIdx === null) return;
+  if(_linkIdx===null) return;
   var idx = _linkIdx;
   initiatives[idx].link = "";
   document.getElementById("linkPopup").classList.remove("show");
   _linkIdx = null;
   var rows = document.querySelectorAll("#rt-table table tbody tr");
-  if (rows[idx]) rows[idx].cells[1].innerHTML = titleCellHtml(idx);
+  if(rows[idx]) rows[idx].cells[1].innerHTML = titleCellHtml(idx);
 }
 
 function closePopup() {
@@ -644,46 +566,75 @@ function closePopup() {
   _linkIdx = null;
 }
 
-function switchTab(btn, id) {
-  document.querySelectorAll(".tabnav .tabitem").forEach(function(b) { b.classList.remove("act"); });
+function switchTab(btn,id) {
+  document.querySelectorAll(".tabnav .tabitem").forEach(function(b){b.classList.remove("act");});
   btn.classList.add("act");
-  document.querySelectorAll(".tabpanel").forEach(function(p) { p.classList.remove("act"); });
-  document.getElementById("rt-" + id).classList.add("act");
+  document.querySelectorAll(".tabpanel").forEach(function(p){p.classList.remove("act");});
+  document.getElementById("rt-"+id).classList.add("act");
 }
 
 function buildNav() {
-  document.getElementById("nav").innerHTML = NAV_CONFIG.map(function(sec) {
-    return "<div><div class=\"seclabel\">" + sec.section + "</div>"
-      + sec.items.map(function(item) {
-          var act = item.id === activeId;
-          return "<div class=\"nitem" + (act ? " act" : "") + "\" onclick=\"setPage('" + item.id + "','" + item.label + "')\">"
-            + (act ? "<div class=\"nbar\"></div>" : "")
-            + "<div class=\"nico\">" + item.icon + "</div>"
-            + "<span class=\"nlabel\">" + item.label + "</span></div>";
-        }).join("")
-      + "</div>";
+  document.getElementById("nav").innerHTML = NAV_CONFIG.map(function(sec){
+    return "<div><div class=\"seclabel\">"+sec.section+"</div>"
+      +sec.items.map(function(item){
+        var act = item.id===activeId;
+        return "<div class=\"nitem"+(act?" act":"")+"\" onclick=\"setPage('"+item.id+"','"+item.label+"')\">"
+          +(act?"<div class=\"nbar\"></div>":"")
+          +"<div class=\"nico\">"+item.icon+"</div>"
+          +"<span class=\"nlabel\">"+item.label+"</span></div>";
+      }).join("")+"</div>";
   }).join("");
 }
 
-function setPage(id, label) {
+function setPage(id,label) {
   activeId = id;
   document.getElementById("pgname").textContent = label;
-  document.getElementById("content").innerHTML = PAGES[id] ? PAGES[id]() : "<div class=\"ptitle\">" + label + "</div>";
+  document.getElementById("content").innerHTML = PAGES[id]?PAGES[id]():"<div class=\"ptitle\">"+label+"</div>";
   buildNav();
+}
+
+function loadData(callback) {
+  var el = document.getElementById("content");
+  if(el) el.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:var(--muted)">Loading data...</div>';
+
+  fetch("/api/data")
+    .then(function(r){return r.json();})
+    .then(function(data){
+      initiatives = (data.initiatives||[]).map(function(i){
+        return {
+          quarter:       String(i.quarter      ||"").trim(),
+          title:         String(i.title        ||"").trim(),
+          driver:        String(i.driver       ||"").trim(),
+          team:          String(i.team         ||"").trim(),
+          theme:         String(i.theme        ||"").trim(),
+          productOwner:  String(i.productOwner ||"").trim(),
+          techLead:      String(i.techLead     ||"").trim(),
+          addedValue:    "—",
+          roi:           "—",
+          deliveryStatus:"on-track",
+          confidence:    "medium",
+          link:          ""
+        };
+      });
+      if(callback) callback();
+    })
+    .catch(function(err){
+      if(el) el.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:#C0392B">Failed to load data.<br><br>'+err+"</div>";
+    });
 }
 
 function login() {
   var e = document.getElementById("em").value.trim();
   var p = document.getElementById("pw").value;
-  if (e === "admin@kerv.io" && p === "kerv2024") {
+  if(e==="admin@kerv.io"&&p==="kerv2024"){
     document.getElementById("auth").classList.add("gone");
-    setTimeout(function() { document.getElementById("auth").style.display = "none"; }, 300);
+    setTimeout(function(){document.getElementById("auth").style.display="none";},300);
     document.getElementById("app").classList.add("show");
     var name = e.split("@")[0];
     document.getElementById("av").textContent = name.slice(0,2).toUpperCase();
-    document.getElementById("un").textContent = name.charAt(0).toUpperCase() + name.slice(1);
+    document.getElementById("un").textContent = name.charAt(0).toUpperCase()+name.slice(1);
     buildNav();
-    loadData(function() {
+    loadData(function(){
       document.getElementById("content").innerHTML = PAGES[activeId]();
     });
   } else {
@@ -694,30 +645,29 @@ function login() {
 function logout() {
   document.getElementById("app").classList.remove("show");
   document.getElementById("auth").style.display = "flex";
-  setTimeout(function() { document.getElementById("auth").classList.remove("gone"); }, 10);
+  setTimeout(function(){document.getElementById("auth").classList.remove("gone");},10);
   document.getElementById("pw").value = "";
   document.getElementById("err").textContent = "";
 }
 
 function toggleSb() {
   collapsed = !collapsed;
-  document.getElementById("sb").classList.toggle("col", collapsed);
+  document.getElementById("sb").classList.toggle("col",collapsed);
   document.getElementById("togico").innerHTML = collapsed
     ? "<path d=\"M4 2l3 3-3 3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"
     : "<path d=\"M6 2L3 5l3 3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>";
 }
 
-/* ---- INIT ---- */
-(function() {
+(function(){
   var m = new Date().getMonth(), y = new Date().getFullYear();
-  document.getElementById("qbadge").textContent = "Q" + (m < 3 ? 1 : m < 6 ? 2 : m < 9 ? 3 : 4) + " " + y;
-  document.getElementById("pw").addEventListener("keydown", function(e) { if (e.key === "Enter") login(); });
-  document.getElementById("em").addEventListener("keydown", function(e) { if (e.key === "Enter") login(); });
-  document.addEventListener("click", function(e) {
+  document.getElementById("qbadge").textContent = "Q"+(m<3?1:m<6?2:m<9?3:4)+" "+y;
+  document.getElementById("pw").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+  document.getElementById("em").addEventListener("keydown",function(e){if(e.key==="Enter")login();});
+  document.addEventListener("click",function(e){
     var pop = document.getElementById("linkPopup");
-    if (pop.classList.contains("show") && !pop.contains(e.target)) closePopup();
+    if(pop.classList.contains("show")&&!pop.contains(e.target)) closePopup();
   });
-  document.addEventListener("keydown", function(e) { if (e.key === "Escape") closePopup(); });
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closePopup();});
 })();
 </script>
 </body>
