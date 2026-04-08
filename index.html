@@ -140,6 +140,15 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 .filterbar select.active{border-color:var(--accent);color:var(--text)}
 .filter-reset{height:30px;padding:0 12px;border:1px solid var(--border-md);border-radius:7px;font-size:12px;font-family:inherit;color:var(--muted);background:none;cursor:pointer;transition:color .15s,border-color .15s}
 .filter-reset:hover{color:var(--accent);border-color:var(--accent)}
+.roi-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.roi-summary-title{padding:12px 16px;border-bottom:1px solid var(--border);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)}
+.roi-summary-cols{display:flex}
+.roi-summary-col{flex:1;min-width:0;padding:14px 16px;border-right:1px solid var(--border)}
+.roi-summary-col:last-child{border-right:none}
+.roi-col-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:10px}
+.roi-col-count{font-size:20px;font-weight:500;letter-spacing:-.5px;margin-bottom:2px}
+.roi-col-sublabel{font-size:11px;color:var(--muted);margin-bottom:8px}
+.roi-col-val{font-size:13px;font-weight:500;margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -255,17 +264,17 @@ function currentQLabel() {
 function roiNum(str) {
   return parseFloat(String(str||"").replace(/[^0-9.-]/g,"")) || 0;
 }
-function roiStr(n) {
-  if (n >= 1000)  return "$"+(n/1000).toFixed(0)+"K";
-  if (n <= -1000) return "-$"+(Math.abs(n)/1000).toFixed(0)+"K";
-  if (n < 0)      return "-$"+Math.abs(n);
-  return "$"+n;
-}
 function fmtDollar(val) {
   if (!val || val === "—") return "—";
   var n = parseFloat(String(val).replace(/[^0-9.-]/g,""));
   if (isNaN(n)) return String(val);
   return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function fmtAV(sum) {
+  if (!sum && sum !== 0) return "—";
+  if (sum >= 1000000) return "$" + (sum/1000000).toFixed(1) + "M";
+  if (sum >= 1000)    return "$" + (sum/1000).toFixed(0) + "K";
+  return "$" + sum.toFixed(2);
 }
 function roiHtml(val) {
   if (!val || val === "—") return "—";
@@ -275,7 +284,13 @@ function roiHtml(val) {
   var color = pct < 0 ? "#A93226" : "#3B6D11";
   return '<span style="color:'+color+';font-weight:500">'+pct+"%</span>";
 }
-function pill(label,cls) {
+function roiAvgHtml(avg) {
+  if (isNaN(avg)) return "—";
+  var pct = Math.round(avg * 100);
+  var color = pct < 0 ? "#A93226" : "#3B6D11";
+  return '<span style="color:'+color+';font-weight:500">'+pct+"%</span>";
+}
+function pill(label, cls) {
   return '<span class="pill '+cls+'">'+label+"</span>";
 }
 function dsHtml(idx) {
@@ -303,7 +318,6 @@ function titleCellHtml(idx) {
     : '<span class="init-title">'+i.title+"</span>";
   return '<div class="init-cell">'+t+linkIcon(idx)+"</div>";
 }
-
 function saveLocalState() {
   var state = {};
   initiatives.forEach(function(i,idx){
@@ -324,7 +338,62 @@ function loadLocalState() {
     });
   } catch(e) {}
 }
-
+function calcGroup(items) {
+  var avSum = 0, roiSum = 0, roiCount = 0;
+  items.forEach(function(i){
+    var av = parseFloat(String(i.addedValue||"").replace(/[^0-9.-]/g,""));
+    if (!isNaN(av)) avSum += av;
+    var roi = parseFloat(String(i.roi||"").replace(/[^0-9.-]/g,""));
+    if (!isNaN(roi)) { roiSum += roi; roiCount++; }
+  });
+  return {count:items.length, av:avSum, roiAvg: roiCount ? roiSum/roiCount : NaN};
+}
+function roiSummaryCard(title, groups) {
+  var cols = groups.map(function(g, gi){
+    var s = calcGroup(g.items);
+    var isLast = gi === groups.length - 1;
+    return '<div class="roi-summary-col"'+(isLast?' style="border-right:none"':'')+''+'>'
+      +'<div class="roi-col-label">'+g.label+"</div>"
+      +'<div class="roi-col-count">'+s.count+"</div>"
+      +'<div class="roi-col-sublabel">initiatives</div>'
+      +'<div class="roi-col-val">'+fmtAV(s.av)+"</div>"
+      +'<div class="roi-col-sublabel">added value</div>'
+      +'<div class="roi-col-val">'+roiAvgHtml(s.roiAvg)+"</div>"
+      +'<div class="roi-col-sublabel">avg ROI</div>'
+      +"</div>";
+  }).join("");
+  return '<div class="roi-summary-card">'
+    +'<div class="roi-summary-title">'+title+"</div>"
+    +'<div class="roi-summary-cols">'+cols+"</div>"
+    +"</div>";
+}
+function buildROISummaries() {
+  var quarters = ["Q1","Q2","Q3","Q4"];
+  function makeGroups(subset) {
+    var gs = quarters.map(function(q){
+      return {label:q, items:subset.filter(function(i){return i.quarter===q;})};
+    });
+    gs.push({label:"Total", items:subset});
+    return gs;
+  }
+  var html = roiSummaryCard("By Quarter", makeGroups(initiatives));
+  var drivers = [];
+  initiatives.forEach(function(i){if(drivers.indexOf(i.driver)===-1) drivers.push(i.driver);});
+  drivers.sort().forEach(function(d){
+    html += roiSummaryCard(d, makeGroups(initiatives.filter(function(i){return i.driver===d;})));
+  });
+  var teams = [];
+  initiatives.forEach(function(i){if(teams.indexOf(i.team)===-1) teams.push(i.team);});
+  teams.sort().forEach(function(t){
+    html += roiSummaryCard(t, makeGroups(initiatives.filter(function(i){return i.team===t;})));
+  });
+  var themes = [];
+  initiatives.forEach(function(i){if(themes.indexOf(i.theme)===-1) themes.push(i.theme);});
+  themes.sort().forEach(function(th){
+    html += roiSummaryCard(th, makeGroups(initiatives.filter(function(i){return i.theme===th;})));
+  });
+  return html;
+}
 function scInitiatives() {
   var cq = currentQ();
   var inQ = initiatives.filter(function(i){return i.quarter===cq;});
@@ -376,7 +445,6 @@ function refreshSc() {
   document.getElementById("sc-atrisk").textContent     = inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length;
   document.getElementById("sc-delayed").textContent    = inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;
 }
-
 function buildFilterOptions(key) {
   var vals = [];
   initiatives.forEach(function(i){if(vals.indexOf(i[key])===-1) vals.push(i[key]);});
@@ -447,11 +515,8 @@ function resetFiltersKanban() {
   });
   document.querySelectorAll("#kanban-wrap .kancard").forEach(function(card){card.style.display="";});
 }
-
 function renderRoadmap() {
   var quarters = ["Q1","Q2","Q3","Q4","Backlog"];
-  var ph = function(lbl){return '<div class="mcard"><div class="mlabel">'+lbl+'</div><div class="mval-ph">—</div></div>';};
-
   var tableRows = initiatives.map(function(i,idx){
     return "<tr>"
       +"<td>"+i.quarter+"</td>"
@@ -466,7 +531,6 @@ function renderRoadmap() {
       +"<td>"+dsHtml(idx)+"</td>"
       +"</tr>";
   }).join("");
-
   var kanban = quarters.map(function(q){
     var items = initiatives.filter(function(i){return i.quarter===q;});
     var cards = items.map(function(i){
@@ -486,7 +550,7 @@ function renderRoadmap() {
         +'<div class="kancard-footer">'
         +'<div class="ds-wrap"><span class="pill ds-pill '+opt.cls+'">'+opt.label+"</span>"
         +'<select class="ds-select" onchange="updateStatus('+idx+',this.value)">'+opts+"</select></div>"
-        +'<span class="kancard-roi">'+i.roi+"</span>"
+        +'<span class="kancard-roi">'+roiHtml(i.roi)+"</span>"
         +"</div></div>";
     }).join("");
     return '<div class="kancol">'
@@ -494,12 +558,6 @@ function renderRoadmap() {
       +'<span class="kancol-count">'+items.length+"</span></div>"
       +'<div class="kancol-body">'+(cards||'<div style="padding:8px;font-size:12px;color:var(--faint)">No initiatives</div>')+"</div></div>";
   }).join("");
-
-  var roiRows = initiatives.slice().sort(function(a,b){return roiNum(b.roi)-roiNum(a.roi);}).map(function(i){
-    var conf = i.confidence.charAt(0).toUpperCase()+i.confidence.slice(1);
-    return "<tr><td>"+i.title+"</td><td>"+i.productOwner+"</td><td>"+roiHtml(i.roi)+"</td><td>"+pill(conf,confClass[i.confidence])+"</td></tr>";
-  }).join("");
-
   return '<div class="ptitle">Product Roadmap</div>'
     +'<div class="psub">Quarterly initiatives and progress status</div>'
     +'<div class="tabnav">'
@@ -520,20 +578,16 @@ function renderRoadmap() {
     +'<div class="kanban" id="kanban-wrap">'+kanban+"</div>"
     +"</div>"
     +'<div id="rt-roi" class="tabpanel">'
-    +'<div class="cards">'+ph("Placeholder 1")+ph("Placeholder 2")+ph("Placeholder 3")+ph("Placeholder 4")+"</div>"
-    +'<div class="twrap"><div class="thead-row">Initiatives by ROI Estimate</div><table>'
-    +"<thead><tr><th>Initiative</th><th>Owner</th><th>Est. ROI</th><th>Confidence</th></tr></thead>"
-    +"<tbody>"+roiRows+"</tbody></table></div>"
+    +buildROISummaries()
     +"</div>";
 }
-
 function renderCapacity() {
   return '<div class="ptitle">Team Capacity</div>'
     +'<div class="psub">Resource allocation and availability by team</div>'
     +'<div class="cards" style="grid-template-columns:repeat(3,minmax(0,1fr))">'
-    +'<div class="mcard"><div class="mlabel">Total Members</div><div class="mval">32</div><div class="mdelta">+2 this quarter</div></div>'
-    +'<div class="mcard"><div class="mlabel">Avg. Utilization</div><div class="mval">78%</div><div class="mdelta" style="color:#185FA5">Within range</div></div>'
-    +'<div class="mcard"><div class="mlabel">Open Positions</div><div class="mval">4</div><div class="mdelta">Active hiring</div></div>'
+    +'<div class="mcard"><div class="mlabel">Total Members</div><div class="mval">32</div></div>'
+    +'<div class="mcard"><div class="mlabel">Avg. Utilization</div><div class="mval">78%</div></div>'
+    +'<div class="mcard"><div class="mlabel">Open Positions</div><div class="mval">4</div></div>'
     +"</div>"
     +'<div class="twrap"><div class="thead-row">Teams</div><table>'
     +"<thead><tr><th>Team</th><th>Lead</th><th>Members</th><th>Utilization</th></tr></thead>"
@@ -545,9 +599,7 @@ function renderCapacity() {
     +"<tr><td>Growth</td><td>Marco R.</td><td>9</td><td>"+pill("88%","p-done")+"</td></tr>"
     +"</tbody></table></div>";
 }
-
 var PAGES = {roadmap:renderRoadmap, capacity:renderCapacity};
-
 function updateStatus(idx,val) {
   initiatives[idx].deliveryStatus = val;
   var rows = document.querySelectorAll("#rt-table table tbody tr");
