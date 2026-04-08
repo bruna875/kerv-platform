@@ -342,7 +342,27 @@ function scGrouped(id, label, key) {
     +'<div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">'+rows+"</div></div>";
 }
 
-function refreshSc() {
+function saveLocalState() {
+  var state = {};
+  initiatives.forEach(function(i, idx) {
+    state[idx] = {deliveryStatus: i.deliveryStatus, link: i.link};
+  });
+  try { localStorage.setItem("kerv_state", JSON.stringify(state)); } catch(e) {}
+}
+
+function loadLocalState() {
+  try {
+    var raw = localStorage.getItem("kerv_state");
+    if (!raw) return;
+    var state = JSON.parse(raw);
+    Object.keys(state).forEach(function(idx) {
+      var i = initiatives[parseInt(idx)];
+      if (!i) return;
+      i.deliveryStatus = state[idx].deliveryStatus || i.deliveryStatus;
+      i.link           = state[idx].link           || i.link;
+    });
+  } catch(e) {}
+}
   if(!document.getElementById("sc-init")) return;
   var cq = currentQ();
   var inQ = initiatives.filter(function(i){return i.quarter===cq;});
@@ -534,6 +554,7 @@ function updateStatus(idx,val) {
   var rows = document.querySelectorAll("#rt-table table tbody tr");
   if(rows[idx]) rows[idx].cells[9].innerHTML = dsHtml(idx);
   refreshSc();
+  saveLocalState();
 }
 
 function openCurrentLink() {
@@ -562,6 +583,7 @@ function saveLink() {
   _linkIdx = null;
   var rows = document.querySelectorAll("#rt-table table tbody tr");
   if(rows[idx]) rows[idx].cells[1].innerHTML = titleCellHtml(idx);
+  saveLocalState();
 }
 
 function clearLink() {
@@ -572,6 +594,7 @@ function clearLink() {
   _linkIdx = null;
   var rows = document.querySelectorAll("#rt-table table tbody tr");
   if(rows[idx]) rows[idx].cells[1].innerHTML = titleCellHtml(idx);
+  saveLocalState();
 }
 
 function closePopup() {
@@ -622,9 +645,9 @@ function loadData(callback) {
           theme:         String(i.theme        ||"").trim(),
           productOwner:  String(i.productOwner ||"").trim(),
           techLead:      String(i.techLead     ||"").trim(),
-          addedValue:    "—",
-          roi:           "—",
-          deliveryStatus:"on-track",
+          addedValue:    i.addedValue !== undefined && i.addedValue !== "" ? i.addedValue : "—",
+          roi:           i.roi        !== undefined && i.roi        !== "" ? i.roi        : "—",
+          deliveryStatus:"not-started",
           confidence:    "medium",
           link:          ""
         };
@@ -648,6 +671,7 @@ function login() {
     document.getElementById("un").textContent = name.charAt(0).toUpperCase()+name.slice(1);
     buildNav();
     loadData(function(){
+      loadLocalState();
       document.getElementById("content").innerHTML = PAGES[activeId]();
     });
   } else {
