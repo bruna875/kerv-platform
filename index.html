@@ -270,11 +270,35 @@ function buildQFilter(prefix,fn){
 function setQAct(prefix,q){["Q1","Q2","Q3","Q4","all"].forEach(function(b){var el=document.getElementById(prefix+"-btn-"+b);if(el){if(b===q)el.classList.add("act");else el.classList.remove("act");}});}
 
 /* ---- Scorecards ---- */
-function scInitiatives(){var cq=currentQ(),inQ=initiatives.filter(function(i){return i.quarter===cq;}),ns=inQ.filter(function(i){return i.deliveryStatus==="not-started";}).length,on=inQ.filter(function(i){return i.deliveryStatus==="on-track";}).length,ar=inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length,dl=inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;return '<div class="mcard" id="sc-init"><div class="mlabel">Initiatives <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">'+currentQLabel()+'</span></div><div class="mval" id="sc-total">'+inQ.length+'</div><div class="sc-badges"><span class="sc-badge ds-gray"><span id="sc-ns">'+ns+'</span> Not Started</span><span class="sc-badge ds-green"><span id="sc-on">'+on+'</span> On Track</span><span class="sc-badge ds-yellow"><span id="sc-ar">'+ar+'</span> At Risk</span><span class="sc-badge ds-red"><span id="sc-dl">'+dl+'</span> Delayed</span></div></div>';}
-function refreshSc(){if(!document.getElementById("sc-init"))return;var cq=currentQ(),inQ=initiatives.filter(function(i){return i.quarter===cq;});document.getElementById("sc-total").textContent=inQ.length;document.getElementById("sc-ns").textContent=inQ.filter(function(i){return i.deliveryStatus==="not-started";}).length;document.getElementById("sc-on").textContent=inQ.filter(function(i){return i.deliveryStatus==="on-track";}).length;document.getElementById("sc-ar").textContent=inQ.filter(function(i){return i.deliveryStatus==="at-risk";}).length;document.getElementById("sc-dl").textContent=inQ.filter(function(i){return i.deliveryStatus==="delayed";}).length;}
-function scGrouped(id,label,key){var cq=currentQ(),inQ=initiatives.filter(function(i){return i.quarter===cq;}),groups={};inQ.forEach(function(i){var k=i[key];if(!groups[k])groups[k]={"not-started":0,"on-track":0,"at-risk":0,"delayed":0};groups[k][i.deliveryStatus]++;});var rows=Object.keys(groups).map(function(k){var g=groups[k],pills="";if(g["not-started"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#F1EFE8;color:#6B6B65">'+g["not-started"]+"</span>";if(g["on-track"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#EAF3DE;color:#3B6D11">'+g["on-track"]+"</span>";if(g["at-risk"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FAEEDA;color:#854F0B">'+g["at-risk"]+"</span>";if(g["delayed"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FDECEA;color:#A93226">'+g["delayed"]+"</span>";return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+k+'</span><div style="display:flex;gap:3px;flex-shrink:0">'+pills+"</div></div>";}).join("");return '<div class="mcard" id="'+id+'"><div class="mlabel">'+label+' <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">'+currentQLabel()+'</span></div><div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">'+rows+"</div></div>";}
+function scInitiativesFor(subset,label){
+  var ns=subset.filter(function(i){return i.deliveryStatus==="not-started";}).length;
+  var on=subset.filter(function(i){return i.deliveryStatus==="on-track";}).length;
+  var ar=subset.filter(function(i){return i.deliveryStatus==="at-risk";}).length;
+  var dl=subset.filter(function(i){return i.deliveryStatus==="delayed";}).length;
+  return '<div class="mcard" id="sc-init"><div class="mlabel">Initiatives <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">'+label+'</span></div><div class="mval" id="sc-total">'+subset.length+'</div><div class="sc-badges"><span class="sc-badge ds-gray"><span id="sc-ns">'+ns+'</span> Not Started</span><span class="sc-badge ds-green"><span id="sc-on">'+on+'</span> On Track</span><span class="sc-badge ds-yellow"><span id="sc-ar">'+ar+'</span> At Risk</span><span class="sc-badge ds-red"><span id="sc-dl">'+dl+'</span> Delayed</span></div></div>';
+}
+function scGroupedFor(id,label,key,subset,qlabel){
+  var groups={};
+  subset.forEach(function(i){var k=i[key];if(!groups[k])groups[k]={"not-started":0,"on-track":0,"at-risk":0,"delayed":0};groups[k][i.deliveryStatus]++;});
+  var rows=Object.keys(groups).map(function(k){var g=groups[k],pills="";if(g["not-started"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#F1EFE8;color:#6B6B65">'+g["not-started"]+"</span>";if(g["on-track"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#EAF3DE;color:#3B6D11">'+g["on-track"]+"</span>";if(g["at-risk"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FAEEDA;color:#854F0B">'+g["at-risk"]+"</span>";if(g["delayed"]>0)pills+='<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;background:#FDECEA;color:#A93226">'+g["delayed"]+"</span>";return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+k+'</span><div style="display:flex;gap:3px;flex-shrink:0">'+pills+"</div></div>";}).join("");
+  return '<div class="mcard" id="'+id+'"><div class="mlabel">'+label+' <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">'+qlabel+'</span></div><div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">'+rows+"</div></div>";
+}
+function refreshCards(subset,label){
+  var sc=document.getElementById("sc-init");
+  if(sc) sc.outerHTML=scInitiativesFor(subset,label);
+  ["sc-driver","sc-theme","sc-team"].forEach(function(id,i){
+    var keys=["driver","theme","team"],el=document.getElementById(id);
+    if(el) el.outerHTML=scGroupedFor(id,["By Driver","By Theme","By Team"][i],keys[i],subset,label);
+  });
+  ["sc-driver-q","sc-theme-q","sc-team-q"].forEach(function(id,i){
+    var keys=["driver","theme","team"],el=document.getElementById(id);
+    if(el) el.outerHTML=scGroupedFor(id,["By Driver","By Theme","By Team"][i],keys[i],subset,label);
+  });
+}
 
-/* ---- Filters ---- */
+function scInitiatives(){var cq=currentQ(),inQ=initiatives.filter(function(i){return i.quarter===cq;});return scInitiativesFor(inQ,currentQLabel());}
+function scGrouped(id,label,key){var cq=currentQ(),inQ=initiatives.filter(function(i){return i.quarter===cq;});return scGroupedFor(id,label,key,inQ,currentQLabel());}
+function refreshSc(){var cq=currentQ(),inQ=initiatives.filter(function(i){return i.quarter===cq;});refreshCards(inQ,currentQLabel());}
 function buildFilterOptions(key){var v=[];initiatives.forEach(function(i){if(v.indexOf(i[key])===-1)v.push(i[key]);});v.sort();return v.map(function(x){return '<option value="'+x+'">'+x+"</option>";}).join("");}
 function buildFilterBar(s){s=s||"";var ds=deliveryOpts.map(function(o){return '<option value="'+o.val+'">'+o.label+"</option>";}).join(""),fn=s?"applyFiltersKanban()":"applyFilters()",rs=s?"resetFiltersKanban()":"resetFilters()";return '<div class="filterbar"><select id="f-quarter'+s+'" onchange="'+fn+'"><option value="">All Quarters</option>'+buildFilterOptions("quarter")+'</select><select id="f-driver'+s+'" onchange="'+fn+'"><option value="">All Drivers</option>'+buildFilterOptions("driver")+'</select><select id="f-team'+s+'" onchange="'+fn+'"><option value="">All Teams</option>'+buildFilterOptions("team")+'</select><select id="f-theme'+s+'" onchange="'+fn+'"><option value="">All Themes</option>'+buildFilterOptions("theme")+'</select><select id="f-po'+s+'" onchange="'+fn+'"><option value="">All Product Owners</option>'+buildFilterOptions("productOwner")+'</select><select id="f-tl'+s+'" onchange="'+fn+'"><option value="">All Tech Leads</option>'+buildFilterOptions("techLead")+'</select><select id="f-status'+s+'" onchange="'+fn+'"><option value="">All Statuses</option>'+ds+'</select><button class="filter-reset" onclick="'+rs+'">Reset</button></div>';}
 function applyFilters(){var fq=document.getElementById("f-quarter").value,fd=document.getElementById("f-driver").value,ft=document.getElementById("f-team").value,fth=document.getElementById("f-theme").value,fpo=document.getElementById("f-po").value,ftl=document.getElementById("f-tl").value,fs=document.getElementById("f-status").value;document.querySelectorAll("#rt-table table tbody tr").forEach(function(row,idx){var i=initiatives[idx];if(!i){row.style.display="none";return;}row.style.display=(!fq||i.quarter===fq)&&(!fd||i.driver===fd)&&(!ft||i.team===ft)&&(!fth||i.theme===fth)&&(!fpo||i.productOwner===fpo)&&(!ftl||i.techLead===ftl)&&(!fs||i.deliveryStatus===fs)?"":"none";});["f-quarter","f-driver","f-team","f-theme","f-po","f-tl","f-status"].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.toggle("active",el.value!=="");});}
@@ -284,16 +308,21 @@ function resetFiltersKanban(){["f-quarterq","f-driverq","f-teamq","f-themeq","f-
 
 /* ---- Quarter filters per tab ---- */
 function switchTableQuarter(q){
+  var label=q==="all"?"All Year":q;
   var subset=q==="all"?initiatives:initiatives.filter(function(i){return i.quarter===q;});
   var rows=subset.map(function(i){var idx=initiatives.indexOf(i);return "<tr><td>"+i.quarter+"</td><td>"+titleCellHtml(idx)+"</td><td>"+i.driver+"</td><td>"+i.productOwner+"</td><td>"+i.techLead+"</td><td>"+i.theme+"</td><td>"+i.team+"</td><td>"+fmtDollar(i.addedValue)+"</td><td>"+roiHtml(i.roi)+"</td><td>"+dsHtml(idx)+"</td></tr>";}).join("");
   var tbody=document.querySelector("#rt-table table tbody");
   if(tbody) tbody.innerHTML=rows;
+  refreshCards(subset,label);
   setQAct("tbl",q);
 }
 function switchKanbanQuarter(q){
+  var label=q==="all"?"All Year":q;
+  var subset=q==="all"?initiatives:initiatives.filter(function(i){return i.quarter===q;});
   var cols=document.querySelectorAll("#kanban-wrap .kancol");
   var quarters=["Q1","Q2","Q3","Q4","Backlog"];
   cols.forEach(function(col,i){col.style.display=(q==="all"||quarters[i]===q)?"":"none";});
+  refreshCards(subset,label);
   setQAct("kan",q);
 }
 function switchROIQuarter(q){
@@ -380,8 +409,6 @@ function renderRoadmap(){
     +'<table><thead><tr><th>Quarter</th><th>Initiative</th><th>Driver</th><th>Product Owner</th><th>Tech Lead</th><th>Theme</th><th>Team</th><th>Added Value</th><th>ROI</th><th>Status</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'
     +'</div>'
     +'<div id="rt-quarterly" class="tabpanel">'
-    +buildQFilter("kan","switchKanbanQuarter")
-    +'<div class="cards">'+scInitiatives()+scGrouped("sc-driver-q","By Driver","driver")+scGrouped("sc-theme-q","By Theme","theme")+scGrouped("sc-team-q","By Team","team")+'</div>'
     +buildQuarterlyProgressBars()
     +'<div style="margin-bottom:16px">'+buildFilterBar("q")+'</div>'
     +'<div class="kanban" id="kanban-wrap">'+kanban+'</div>'
