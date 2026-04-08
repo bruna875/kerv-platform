@@ -338,61 +338,91 @@ function loadLocalState() {
     });
   } catch(e) {}
 }
-function calcGroup(items) {
-  var avSum = 0, roiSum = 0, roiCount = 0;
-  items.forEach(function(i){
-    var av = parseFloat(String(i.addedValue||"").replace(/[^0-9.-]/g,""));
-    if (!isNaN(av)) avSum += av;
-    var roi = parseFloat(String(i.roi||"").replace(/[^0-9.-]/g,""));
-    if (!isNaN(roi)) { roiSum += roi; roiCount++; }
-  });
-  return {count:items.length, av:avSum, roiAvg: roiCount ? roiSum/roiCount : NaN};
-}
-function roiSummaryCard(title, groups) {
-  var cols = groups.map(function(g, gi){
-    var s = calcGroup(g.items);
-    var isLast = gi === groups.length - 1;
-    return '<div class="roi-summary-col"'+(isLast?' style="border-right:none"':'')+''+'>'
-      +'<div class="roi-col-label">'+g.label+"</div>"
-      +'<div class="roi-col-count">'+s.count+"</div>"
-      +'<div class="roi-col-sublabel">initiatives</div>'
-      +'<div class="roi-col-val">'+fmtAV(s.av)+"</div>"
-      +'<div class="roi-col-sublabel">added value</div>'
-      +'<div class="roi-col-val">'+roiAvgHtml(s.roiAvg)+"</div>"
-      +'<div class="roi-col-sublabel">avg ROI</div>'
-      +"</div>";
-  }).join("");
-  return '<div class="roi-summary-card">'
-    +'<div class="roi-summary-title">'+title+"</div>"
-    +'<div class="roi-summary-cols">'+cols+"</div>"
-    +"</div>";
-}
 function buildROISummaries() {
-  var quarters = ["Q1","Q2","Q3","Q4"];
-  function makeGroups(subset) {
-    var gs = quarters.map(function(q){
-      return {label:q, items:subset.filter(function(i){return i.quarter===q;})};
+  var cq = currentQ();
+
+  function calcGroup(items) {
+    var avSum = 0, roiSum = 0, roiCount = 0;
+    items.forEach(function(i){
+      var av = parseFloat(String(i.addedValue||"").replace(/[^0-9.-]/g,""));
+      if (!isNaN(av)) avSum += av;
+      var roi = parseFloat(String(i.roi||"").replace(/[^0-9.-]/g,""));
+      if (!isNaN(roi)) { roiSum += roi; roiCount++; }
     });
-    gs.push({label:"Total", items:subset});
-    return gs;
+    return {count: items.length, av: avSum, roiAvg: roiCount ? roiSum/roiCount : NaN};
   }
-  var html = roiSummaryCard("By Quarter", makeGroups(initiatives));
-  var drivers = [];
-  initiatives.forEach(function(i){if(drivers.indexOf(i.driver)===-1) drivers.push(i.driver);});
-  drivers.sort().forEach(function(d){
-    html += roiSummaryCard(d, makeGroups(initiatives.filter(function(i){return i.driver===d;})));
-  });
-  var teams = [];
-  initiatives.forEach(function(i){if(teams.indexOf(i.team)===-1) teams.push(i.team);});
-  teams.sort().forEach(function(t){
-    html += roiSummaryCard(t, makeGroups(initiatives.filter(function(i){return i.team===t;})));
-  });
-  var themes = [];
-  initiatives.forEach(function(i){if(themes.indexOf(i.theme)===-1) themes.push(i.theme);});
-  themes.sort().forEach(function(th){
-    html += roiSummaryCard(th, makeGroups(initiatives.filter(function(i){return i.theme===th;})));
-  });
-  return html;
+
+  function fmtAVlocal(n) {
+    if (!n && n !== 0) return "—";
+    if (n >= 1000000) return "$"+(n/1000000).toFixed(1)+"M";
+    if (n >= 1000)    return "$"+(n/1000).toFixed(0)+"K";
+    return "$"+n.toFixed(0);
+  }
+
+  function fmtROIlocal(avg) {
+    if (isNaN(avg)) return "—";
+    var pct = Math.round(avg * 100);
+    var color = pct < 0 ? "#A93226" : "#3B6D11";
+    return '<span style="color:'+color+';font-weight:500">'+pct+"%</span>";
+  }
+
+  function renderROIContent(qFilter) {
+    var label = qFilter === "all" ? "All Year" : qFilter;
+    var subset = qFilter === "all" ? initiatives : initiatives.filter(function(i){ return i.quarter === qFilter; });
+    var overall = calcGroup(subset);
+
+    var overallCard = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px">'
+      +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Overall ROI &mdash; '+label+"</div>"
+      +'<div><div style="font-size:24px;font-weight:500;letter-spacing:-.5px">'+overall.count+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">initiatives</div></div>'
+      +'<div style="height:1px;background:var(--border)"></div>'
+      +'<div><div style="font-size:20px;font-weight:500">'+fmtAVlocal(overall.av)+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">added value</div></div>'
+      +'<div style="height:1px;background:var(--border)"></div>'
+      +'<div><div style="font-size:20px;font-weight:500">'+fmtROIlocal(overall.roiAvg)+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">avg ROI</div></div>'
+      +"</div>";
+
+    function groupCard(title, key) {
+      var keys = [];
+      subset.forEach(function(i){ if(keys.indexOf(i[key])===-1) keys.push(i[key]); });
+      keys.sort();
+      var header = '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)">'
+        +'<div></div>'
+        +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:32px">Init.</div>'
+        +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:64px">Added Value</div>'
+        +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:48px">Avg ROI</div>'
+        +"</div>";
+      var rows = keys.map(function(k, ki){
+        var s = calcGroup(subset.filter(function(i){ return i[key]===k; }));
+        var isLast = ki === keys.length - 1;
+        return '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:10px 0;'+(isLast?"":" border-bottom:0.5px solid var(--border);")+'align-items:center">'
+          +'<div style="font-size:12px;color:var(--text)">'+k+"</div>"
+          +'<div style="font-size:12px;font-weight:500;text-align:right;min-width:32px">'+s.count+"</div>"
+          +'<div style="font-size:12px;font-weight:500;text-align:right;min-width:64px">'+fmtAVlocal(s.av)+"</div>"
+          +'<div style="font-size:12px;text-align:right;min-width:48px">'+fmtROIlocal(s.roiAvg)+"</div>"
+          +"</div>";
+      }).join("");
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">'
+        +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:14px">'+title+" &mdash; "+label+"</div>"
+        +header+rows+"</div>";
+    }
+
+    return '<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">'
+      +overallCard+groupCard("ROI by Driver","driver")
+      +"</div>"
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+      +groupCard("ROI by Theme","theme")+groupCard("ROI by Team","team")
+      +"</div>";
+  }
+
+  var filterBar = '<div style="margin-bottom:20px;display:flex;gap:4px">'
+    +["Q1","Q2","Q3","Q4","all"].map(function(q){
+      var isActive = q === cq || (q === "all" && false);
+      var label = q === "all" ? "All Year" : q;
+      return '<button id="roi-btn-'+q+'" onclick="switchROIQuarter(\''+q+'\')" style="height:30px;padding:0 14px;border:1px solid '+(q===cq?'var(--accent)':'var(--border-md)')+';border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;background:'+(q===cq?'#FEF0F5':'var(--surface)')+';color:'+(q===cq?'var(--accent)':'var(--muted)')+'">'+label+"</button>";
+    }).join("")
+    +"</div>";
+
+  return filterBar
+    +'<div id="roi-content">'+renderROIContent(cq)+"</div>";
 }
 function scInitiatives() {
   var cq = currentQ();
@@ -647,6 +677,82 @@ function closePopup() {
   document.getElementById("linkPopup").classList.remove("show");
   _linkIdx = null;
 }
+function switchROIQuarter(q) {
+  var subset = q === "all" ? initiatives : initiatives.filter(function(i){ return i.quarter === q; });
+  var label = q === "all" ? "All Year" : q;
+
+  function calcGroup(items) {
+    var avSum = 0, roiSum = 0, roiCount = 0;
+    items.forEach(function(i){
+      var av = parseFloat(String(i.addedValue||"").replace(/[^0-9.-]/g,""));
+      if (!isNaN(av)) avSum += av;
+      var roi = parseFloat(String(i.roi||"").replace(/[^0-9.-]/g,""));
+      if (!isNaN(roi)) { roiSum += roi; roiCount++; }
+    });
+    return {count: items.length, av: avSum, roiAvg: roiCount ? roiSum/roiCount : NaN};
+  }
+  function fmtAVlocal(n) {
+    if (!n && n !== 0) return "—";
+    if (n >= 1000000) return "$"+(n/1000000).toFixed(1)+"M";
+    if (n >= 1000)    return "$"+(n/1000).toFixed(0)+"K";
+    return "$"+n.toFixed(0);
+  }
+  function fmtROIlocal(avg) {
+    if (isNaN(avg)) return "—";
+    var pct = Math.round(avg * 100);
+    var color = pct < 0 ? "#A93226" : "#3B6D11";
+    return '<span style="color:'+color+';font-weight:500">'+pct+"%</span>";
+  }
+
+  var overall = calcGroup(subset);
+  var overallCard = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px">'
+    +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Overall ROI &mdash; '+label+"</div>"
+    +'<div><div style="font-size:24px;font-weight:500;letter-spacing:-.5px">'+overall.count+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">initiatives</div></div>'
+    +'<div style="height:1px;background:var(--border)"></div>'
+    +'<div><div style="font-size:20px;font-weight:500">'+fmtAVlocal(overall.av)+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">added value</div></div>'
+    +'<div style="height:1px;background:var(--border)"></div>'
+    +'<div><div style="font-size:20px;font-weight:500">'+fmtROIlocal(overall.roiAvg)+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">avg ROI</div></div>'
+    +"</div>";
+
+  function groupCard(title, key) {
+    var keys = [];
+    subset.forEach(function(i){ if(keys.indexOf(i[key])===-1) keys.push(i[key]); });
+    keys.sort();
+    var header = '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)">'
+      +'<div></div>'
+      +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:32px">Init.</div>'
+      +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:64px">Added Value</div>'
+      +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:right;min-width:48px">Avg ROI</div>'
+      +"</div>";
+    var rows = keys.map(function(k, ki){
+      var s = calcGroup(subset.filter(function(i){ return i[key]===k; }));
+      var isLast = ki === keys.length-1;
+      return '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:10px 0;'+(isLast?"":" border-bottom:0.5px solid var(--border);")+'align-items:center">'
+        +'<div style="font-size:12px;color:var(--text)">'+k+"</div>"
+        +'<div style="font-size:12px;font-weight:500;text-align:right;min-width:32px">'+s.count+"</div>"
+        +'<div style="font-size:12px;font-weight:500;text-align:right;min-width:64px">'+fmtAVlocal(s.av)+"</div>"
+        +'<div style="font-size:12px;text-align:right;min-width:48px">'+fmtROIlocal(s.roiAvg)+"</div>"
+        +"</div>";
+    }).join("");
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">'
+      +'<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:14px">'+title+" &mdash; "+label+"</div>"
+      +header+rows+"</div>";
+  }
+
+  document.getElementById("roi-content").innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">'+overallCard+groupCard("ROI by Driver","driver")+"</div>"
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'+groupCard("ROI by Theme","theme")+groupCard("ROI by Team","team")+"</div>";
+
+  ["Q1","Q2","Q3","Q4","all"].forEach(function(btn){
+    var el = document.getElementById("roi-btn-"+btn);
+    if (!el) return;
+    var active = btn === q;
+    el.style.borderColor  = active ? "var(--accent)" : "var(--border-md)";
+    el.style.background   = active ? "#FEF0F5"       : "var(--surface)";
+    el.style.color        = active ? "var(--accent)"  : "var(--muted)";
+  });
+}
+
 function switchTab(btn,id) {
   document.querySelectorAll(".tabnav .tabitem").forEach(function(b){b.classList.remove("act");});
   btn.classList.add("act");
