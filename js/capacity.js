@@ -216,7 +216,9 @@ function capRender(q) {
     + '<span class="cap-legend-item"><span class="cap-legend-dot" style="background:#FF1744"></span>Over 95%</span>'
     + '</div>';
 
-  return '<div class="page-header"><div><div class="ptitle">Team Capacity</div><div class="psub">Budget utilization by team and discipline \u2014 Design, Engineering, Product</div></div></div>'
+  return '<div class="page-header"><div><div class="ptitle">Team Capacity</div><div class="psub">Budget utilization by team and discipline \u2014 Design, Engineering, Product</div></div>'
+    + '<a href="https://docs.google.com/spreadsheets/d/1ihpYwERbkuQOLTqR6C2rixhvuxxYlnRQHoccavk-bTc/edit?usp=sharing" target="_blank" class="datasource-link"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Data source \u2192</a>'
+    + '</div>'
     + '<div class="tabnav"><button class="tabitem' + (_capTab === 'allocation' ? ' act' : '') + '" data-captab="allocation">Team Allocation</button><button class="tabitem' + (_capTab === 'englead' ? ' act' : '') + '" data-captab="englead">By Eng Lead</button><button class="tabitem' + (_capTab === 'prodlead' ? ' act' : '') + '" data-captab="prodlead">By Prod Lead</button></div>'
     + buildQFilter('cap', 'switchCapQuarter')
     + '<div id="cap-allocation" style="' + (_capTab === 'allocation' ? '' : 'display:none') + '">' + allocContent + '</div>'
