@@ -45,7 +45,7 @@ function capBarHtml(used, budget) {
   var pct = Math.round(used / budget * 100);
   var over = used > budget;
   var overDays = used - budget;
-  var color = pct > 95 ? '#FF1744' : pct >= 80 ? '#FFB300' : '#00C851';
+  var color = pct > 95 ? '#E5243B' : pct >= 80 ? '#E5A100' : '#2EAD4B';
 
   if (over) {
     var budgetPct = Math.round(budget / used * 100);
@@ -55,7 +55,7 @@ function capBarHtml(used, budget) {
       + '<div class="cap-bar-track" style="overflow:visible;position:relative">'
       + '<div class="cap-bar-budget-line" style="left:' + budgetPct + '%"></div>'
       + '<div class="cap-bar-budget-label" style="left:' + budgetPct + '%">budget</div>'
-      + '<div class="cap-bar-fill" style="width:100%;background:#FF1744"><span class="cap-bar-fill-text">' + pct + '%</span></div>'
+      + '<div class="cap-bar-fill" style="width:100%;background:#E5243B"><span class="cap-bar-fill-text">' + pct + '%</span></div>'
       + '</div>'
       + '<div class="cap-bar-over-hatch" style="width:' + overPct + '%"></div>'
       + '</div>'
@@ -68,12 +68,12 @@ function capBarHtml(used, budget) {
 
 function capStatsHtml(used, budget) {
   var over = used > budget;
-  return '<div class="cap-bar-stats"><div class="cap-bar-stats-val" style="color:' + (over ? '#FF1744' : 'var(--text)') + '">' + Math.round(used) + 'd</div><div class="cap-bar-stats-of">of ' + Math.round(budget) + '</div></div>';
+  return '<div class="cap-bar-stats"><div class="cap-bar-stats-val" style="color:' + (over ? '#E5243B' : 'var(--text)') + '">' + Math.round(used) + 'd</div><div class="cap-bar-stats-of">of ' + Math.round(budget) + '</div></div>';
 }
 
 function capScorecardHtml(label, used, budget) {
   var pct = budget > 0 ? Math.round(used / budget * 100) : 0;
-  var color = pct > 95 ? '#FF1744' : pct >= 80 ? '#FFB300' : '#00C851';
+  var color = pct > 95 ? '#E5243B' : pct >= 80 ? '#E5A100' : '#2EAD4B';
   return '<div class="cap-scorecard"><div class="cap-scorecard-label">' + label + '</div><div class="cap-scorecard-val" style="color:' + color + '">' + pct + '%</div><div class="cap-scorecard-sub">' + Math.round(used) + 'd of ' + Math.round(budget) + 'd</div></div>';
 }
 
@@ -211,9 +211,9 @@ function capRender(q) {
     + '</div>'
     + blocks
     + '<div class="cap-legend">'
-    + '<span class="cap-legend-item"><span class="cap-legend-dot" style="background:#00C851"></span>Under 80%</span>'
-    + '<span class="cap-legend-item"><span class="cap-legend-dot" style="background:#FFB300"></span>80\u201395%</span>'
-    + '<span class="cap-legend-item"><span class="cap-legend-dot" style="background:#FF1744"></span>Over 95%</span>'
+    + '<span class="cap-legend-item"><span class="cap-legend-dot" style="background:#2EAD4B"></span>Under 80%</span>'
+    + '<span class="cap-legend-item"><span class="cap-legend-dot" style="background:#E5A100"></span>80\u201395%</span>'
+    + '<span class="cap-legend-item"><span class="cap-legend-dot" style="background:#E5243B"></span>Over 95%</span>'
     + '</div>';
 
   return '<div class="page-header"><div><div class="ptitle">Team Capacity</div><div class="psub">Budget utilization by team and discipline \u2014 Design, Engineering, Product</div></div>'
