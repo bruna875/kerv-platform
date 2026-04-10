@@ -254,7 +254,7 @@ function toggleSb() {
 
 function login() {
   var e = document.getElementById('em').value.trim(), p = document.getElementById('pw').value;
-  if (e === 'condoadmin@verygoodpeeps.co' && p === 'HelixCapital') {
+  if (e === 'product@kerv.ai' && p === 'roadmap') {
     document.getElementById('auth').classList.add('gone');
     setTimeout(function() { document.getElementById('auth').style.display = 'none'; }, 300);
     document.getElementById('app').classList.add('show');
