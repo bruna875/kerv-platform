@@ -26,7 +26,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);font-size:1
 .acard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2.25rem 2.5rem 2rem;width:350px;box-shadow:0 4px 28px rgba(0,0,0,0.07)}
 .alogo{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
 .alogo-text{font-size:18px;font-weight:500;letter-spacing:-.3px}
-.amark{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.amark{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .atitle{font-size:21px;font-weight:500;letter-spacing:-.5px;margin-bottom:5px}
 .asub{font-size:12px;color:var(--muted);margin-bottom:1.75rem}
 .flabel{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
@@ -50,7 +50,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);font-size:1
 .sb{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;transition:width var(--tr);overflow:hidden}
 .sb.col{width:var(--sc)}
 .sbhead{height:52px;display:flex;align-items:center;padding:0 13px;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0}
-.lmark{width:26px;height:26px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lmark{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
 .lname{font-size:15px;font-weight:500;letter-spacing:-.3px;white-space:nowrap;transition:opacity var(--tr)}
 .sb.col .lname{opacity:0}
 .sbnav{flex:1;padding:10px 0;overflow-y:auto;overflow-x:hidden}
@@ -142,10 +142,10 @@ tr:hover td{background:#FAFAF8}
 .ds-wrap:hover .ds-pill{opacity:.85}
 .ds-pill{pointer-events:none}
 .ds-select{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
-.ds-gray{background:#F1EFE8;color:#6B6B65}
-.ds-green{background:#EAF3DE;color:#3B6D11}
-.ds-yellow{background:#FEF3C7;color:#92700A}
-.ds-red{background:#FDECEA;color:#A93226}
+.ds-gray{background:#EDEDF0;color:#8E8E93}
+.ds-green{background:#E0F8E6;color:#00C851}
+.ds-yellow{background:#FFF3D0;color:#FFB300}
+.ds-red{background:#FFE0E3;color:#FF1744}
 
 /* ── Kanban ── */
 .kanban{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
@@ -235,10 +235,10 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 .qp-card-count{font-size:11px;color:var(--faint);background:var(--bg);border-radius:20px;padding:1px 8px}
 .qp-card-bars{padding:10px 14px 4px}
 .qp-bar-track{display:flex;height:6px;border-radius:4px;overflow:hidden;gap:1px}
-.qp-bar-seg-gray{background:#6B6B65}
-.qp-bar-seg-green{background:#3B6D11}
-.qp-bar-seg-yellow{background:#CA8A04}
-.qp-bar-seg-red{background:#A93226}
+.qp-bar-seg-gray{background:#8E8E93}
+.qp-bar-seg-green{background:#00C851}
+.qp-bar-seg-yellow{background:#FFB300}
+.qp-bar-seg-red{background:#FF1744}
 .qp-bar-seg-empty{background:var(--bg)}
 .qp-card-meta{font-size:10px;color:var(--faint);margin-top:4px}
 .qp-card-roi{padding:6px 14px 12px;border-top:1px solid var(--border);margin-top:8px}
@@ -266,8 +266,8 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 .cap-bar-over .cap-bar-track{overflow:visible}
 .cap-bar-budget-line{position:absolute;top:-4px;bottom:-4px;width:1.5px;background:var(--faint);z-index:2}
 .cap-bar-budget-label{position:absolute;top:-12px;font-size:9px;color:var(--faint);transform:translateX(-50%)}
-.cap-bar-over-hatch{position:absolute;right:0;top:0;height:20px;background:repeating-linear-gradient(45deg,#A32D2D22,#A32D2D22 3px,transparent 3px,transparent 6px);border-radius:0 5px 5px 0}
-.cap-bar-over-badge{font-size:11px;font-weight:500;color:#A32D2D;background:#FDECEA;padding:2px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0}
+.cap-bar-over-hatch{position:absolute;right:0;top:0;height:20px;background:repeating-linear-gradient(45deg,#FF174422,#FF174422 3px,transparent 3px,transparent 6px);border-radius:0 5px 5px 0}
+.cap-bar-over-badge{font-size:11px;font-weight:500;color:#FF1744;background:#FFE0E3;padding:2px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0}
 .cap-bar-stats{text-align:right;font-size:12px}
 .cap-bar-stats-val{font-weight:500}
 .cap-bar-stats-of{font-size:11px;color:var(--faint)}
