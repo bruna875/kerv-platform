@@ -36,7 +36,7 @@ function roiHtml(v) {
   var n = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
   if (isNaN(n)) return String(v);
   var p = Math.round(n * 100);
-  return '<span style="color:' + (p < 0 ? '#FF1744' : '#00C851') + ';font-weight:500">' + p + '%</span>';
+  return '<span style="color:' + (p < 0 ? '#E5243B' : '#2EAD4B') + ';font-weight:500">' + p + '%</span>';
 }
 
 function dsHtml(idx) {
@@ -429,7 +429,7 @@ function renderScatterChart(q) {
 // ── ROI content ──
 
 function roiMakeOverallCard(subset, label) {
-  var s = roiCalcGroup(subset), p = isNaN(s.roiAvg) ? 0 : Math.round(s.roiAvg * 100), c = p < 0 ? '#FF1744' : 'var(--accent)';
+  var s = roiCalcGroup(subset), p = isNaN(s.roiAvg) ? 0 : Math.round(s.roiAvg * 100), c = p < 0 ? '#E5243B' : 'var(--accent)';
   return '<div class="roi-card"><div class="roi-card-label">Overall ROI &mdash; ' + label + '</div>'
     + '<div><div class="roi-card-big">' + s.count + '</div><div class="roi-card-small">initiatives</div></div>'
     + '<div class="roi-card-sep"></div>'
@@ -447,7 +447,7 @@ function roiMakeBarCard(subset, title, label, key) {
   var rows = keys.map(function(k, ki) {
     var s = roiCalcGroup(subset.filter(function(i) { return i[key] === k; }));
     var p = isNaN(s.roiAvg) ? 0 : Math.round(s.roiAvg * 100);
-    var tc = p < 0 ? '#FF1744' : '#00C851';
+    var tc = p < 0 ? '#E5243B' : '#2EAD4B';
     var isLast = ki === keys.length - 1;
     var kHtml = colorMap ? badgeHtml(k, colorMap[k] || '#8E8E93') : key === 'team' ? badgeHtml(k, SC_GREENS[ki % SC_GREENS.length]) : '<span style="font-size:12px;color:var(--text)">' + k + '</span>';
     return '<div class="roi-bar-row' + (isLast ? '' : '') + '"><div>' + kHtml + '</div><div class="roi-bar-val">' + roiFmtEU(s.av) + '</div><div class="roi-bar-pct" style="color:' + tc + '">' + p + '%</div></div>';
@@ -479,7 +479,7 @@ function buildROISummaries() {
 var _ganttGroupBy = 'driver';
 
 function buildGantt() {
-  var statusColors = { 'on-track': '#00C851', 'at-risk': '#FFB300', 'delayed': '#FF1744', 'not-started': '#8E8E93' };
+  var statusColors = { 'on-track': '#2EAD4B', 'at-risk': '#E5A100', 'delayed': '#E5243B', 'not-started': '#8E8E93' };
   var statusLabels = { 'on-track': 'On Track', 'at-risk': 'At Risk', 'delayed': 'Delayed', 'not-started': 'Not Started' };
   var cq = currentQ();
   var groupKey = _ganttGroupBy;
@@ -507,10 +507,10 @@ function buildGantt() {
     + '</div>';
 
   var legend = '<div class="gantt-legend">'
-    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#00C851"></span>On Track</span>'
-    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#FFB300"></span>At Risk</span>'
+    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#2EAD4B"></span>On Track</span>'
+    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#E5A100"></span>At Risk</span>'
     + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#8E8E93"></span>Not Started</span>'
-    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#FF1744"></span>Delayed</span>'
+    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#E5243B"></span>Delayed</span>'
     + '</div>';
 
   var qHeaders = ['Q1', 'Q2', 'Q3', 'Q4'];
