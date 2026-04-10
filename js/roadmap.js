@@ -139,8 +139,8 @@ function roiFmtEU(n) {
 
 // ── Color maps ──
 
-var SC_PALETTE = ['#378ADD','#BA7517','#D4537E','#7F77DD','#D85A30','#993556','#534AB7','#E24B4A','#185FA5','#EF9F27','#72243E','#0C447C'];
-var SC_GREENS = ['#3B6D11','#66C220','#1D9E75','#27500A','#8BAF6A','#0F6E56','#97C459','#173404','#5DCAA5','#639922','#9DC47A','#04342C'];
+var SC_PALETTE = ['#ED005E','#FF6B35','#FFB627','#06D6A0','#118AB2','#7B2D8E','#E84393','#00B4D8','#F72585','#4CC9F0','#FF477E','#3A86FF'];
+var SC_GREENS = ['#7B2D8E','#9B59B6','#6C3483','#A569BD','#8E44AD','#BB8FCE','#5B2C6F','#D2B4DE','#4A235A','#7D3C98','#C39BD3','#6A1B9A'];
 var _driverColorMap = {}, _themeColorMap = {};
 
 function scGetColor(idx) { return SC_PALETTE[idx % SC_PALETTE.length]; }
@@ -617,7 +617,7 @@ function renderRoadmap() {
 
   return '<div class="page-header">'
     + '<div><div class="ptitle">Product Roadmap</div><div class="psub">Quarterly initiatives and progress status</div></div>'
-    + '<a id="ob-datasource" href="https://docs.google.com/spreadsheets/d/1g7c51-WX8UqFKJzKrnPzJ_fZSKsagnNj57Jir2v9quc/edit?usp=sharing" target="_blank" class="datasource-link"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Data source \u2192</a>'
+    + '<a id="ob-datasource" href="https://docs.google.com/spreadsheets/d/1ihpYwERbkuQOLTqR6C2rixhvuxxYlnRQHoccavk-bTc/edit?usp=sharing" target="_blank" class="datasource-link"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Data source \u2192</a>'
     + '</div>'
     + '<div class="tabnav"><button class="tabitem act" data-tab="gantt">Gantt</button><button class="tabitem" data-tab="table">Table View</button><button class="tabitem" data-tab="quarterly">Quarterly</button><button class="tabitem" data-tab="roi">By ROI</button></div>'
     + '<div id="rt-gantt" class="tabpanel act">' + buildGantt() + '</div>'
