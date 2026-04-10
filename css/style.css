@@ -143,9 +143,9 @@ tr:hover td{background:#FAFAF8}
 .ds-pill{pointer-events:none}
 .ds-select{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .ds-gray{background:#EDEDF0;color:#8E8E93}
-.ds-green{background:#E0F8E6;color:#00C851}
-.ds-yellow{background:#FFF3D0;color:#FFB300}
-.ds-red{background:#FFE0E3;color:#FF1744}
+.ds-green{background:#E6F5EA;color:#2EAD4B}
+.ds-yellow{background:#FFF3D0;color:#E5A100}
+.ds-red{background:#FDEBEE;color:#E5243B}
 
 /* ── Kanban ── */
 .kanban{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
@@ -236,9 +236,9 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 .qp-card-bars{padding:10px 14px 4px}
 .qp-bar-track{display:flex;height:6px;border-radius:4px;overflow:hidden;gap:1px}
 .qp-bar-seg-gray{background:#8E8E93}
-.qp-bar-seg-green{background:#00C851}
-.qp-bar-seg-yellow{background:#FFB300}
-.qp-bar-seg-red{background:#FF1744}
+.qp-bar-seg-green{background:#2EAD4B}
+.qp-bar-seg-yellow{background:#E5A100}
+.qp-bar-seg-red{background:#E5243B}
 .qp-bar-seg-empty{background:var(--bg)}
 .qp-card-meta{font-size:10px;color:var(--faint);margin-top:4px}
 .qp-card-roi{padding:6px 14px 12px;border-top:1px solid var(--border);margin-top:8px}
@@ -266,8 +266,8 @@ tr:hover .link-btn,.link-btn.has-link{opacity:1;color:var(--accent)}
 .cap-bar-over .cap-bar-track{overflow:visible}
 .cap-bar-budget-line{position:absolute;top:-4px;bottom:-4px;width:1.5px;background:var(--faint);z-index:2}
 .cap-bar-budget-label{position:absolute;top:-12px;font-size:9px;color:var(--faint);transform:translateX(-50%)}
-.cap-bar-over-hatch{position:absolute;right:0;top:0;height:20px;background:repeating-linear-gradient(45deg,#FF174422,#FF174422 3px,transparent 3px,transparent 6px);border-radius:0 5px 5px 0}
-.cap-bar-over-badge{font-size:11px;font-weight:500;color:#FF1744;background:#FFE0E3;padding:2px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0}
+.cap-bar-over-hatch{position:absolute;right:0;top:0;height:20px;background:repeating-linear-gradient(45deg,#E5243B22,#E5243B22 3px,transparent 3px,transparent 6px);border-radius:0 5px 5px 0}
+.cap-bar-over-badge{font-size:11px;font-weight:500;color:#E5243B;background:#FDEBEE;padding:2px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0}
 .cap-bar-stats{text-align:right;font-size:12px}
 .cap-bar-stats-val{font-weight:500}
 .cap-bar-stats-of{font-size:11px;color:var(--faint)}
