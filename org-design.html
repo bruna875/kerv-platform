@@ -158,22 +158,6 @@
   .od-dd-name{font-weight:500;font-size:11px;line-height:1.25;color:var(--text)}
   .od-dd-sub{font-size:9px;color:var(--muted);line-height:1.3}
 
-  /* ── Tab navigation ───────────────────────────────────────────────────────── */
-  .od-tabs{display:flex;gap:6px;margin-bottom:20px}
-  .od-tab{padding:6px 18px;border-radius:7px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);font-family:inherit;transition:background .15s,color .15s,border-color .15s}
-  .od-tab:hover{border-color:var(--accent);color:var(--accent)}
-  .od-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-
-  /* ── By Bounded Context view ──────────────────────────────────────────────── */
-  .bc-view{display:flex;gap:14px;overflow-x:auto}
-  .bc-card{flex:1 1 0;min-width:260px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column}
-  .bc-card-body{display:flex;flex:1;align-items:stretch}
-  .bc-panel-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--border-md)}
-  .bc-panel-col:last-child{border-right:none}
-  .bc-panel-lbl{font-size:10px;font-weight:700;padding:6px 10px;color:#fff;letter-spacing:.2px}
-  .bc-panel-lbl--product{background:var(--accent)}
-  .bc-panel-lbl--technology{background:var(--secondary)}
-  .bc-panel-col .row-squad{flex:1}
 </style>
 </head>
 <body>
@@ -185,10 +169,6 @@
       <div class="top-bar-title">Org Design</div>
       <div class="top-bar-sub">Product &amp; Technology — bounded contexts</div>
     </div>
-  </div>
-  <div class="od-tabs">
-    <button class="od-tab active" data-view="expanded" onclick="odTab('expanded')">Expanded</button>
-    <button class="od-tab" data-view="bc" onclick="odTab('bc')">By Bounded Context</button>
   </div>
   <div class="charts-wrap" id="chartsWrap"></div>
 </div>
@@ -457,109 +437,17 @@
       + '</div>';
   }
 
-  // ── Panel configs ────────────────────────────────────────────────────────────
-  var PRD_CFG = {
-    pid:'prd', label:'Product', lblClass:'bc-panel-lbl--product',
-    hiddenKeys:['shared'],
-    domainOverrides:{
+  // ── Boot ─────────────────────────────────────────────────────────────────────
+  document.getElementById('chartsWrap').innerHTML =
+    panelHtml('prd', 'Product', 'section-header--product', ['shared'], {
       reporting:[{ title:'R&D', off:true }, { title:'Data', sub:'Data Engineering, Analytics and Reporting', spine:1 }]
-    },
-    qaColumns:[], qaSkipMap:{}
-  };
-  var TEC_CFG = {
-    pid:'tec', label:'Technology', lblClass:'bc-panel-lbl--technology',
-    hiddenKeys:[],
-    domainOverrides:{
+    })
+    + '<div class="divider"></div>'
+    + panelHtml('tec', 'Technology', 'section-header--technology', [], {
       api:     [{ title:'Content APIs', sub:'VOD, Livestream, Audio, Taxonomies', spine:3 }, { title:'Commerce APIs', sub:'Product Catalogs', spine:1 }],
       reporting:[{ title:'R&D', sub:'Product Innovation, Research and POCs', spine:1 }, { title:'Data', sub:'Data Engineering, Analytics and Reporting', spine:3 }],
       platform:[{ title:'Product Design', off:true }, { title:'Core and Publisher', sub:'User & Org, Design System, VOD/LIVE/OLV', spine:6 }, { title:'Ad Operations Tools', sub:'Campaign Management, Creative Studio, Ad Formats, Partner Distribution', spine:6 }]
-    },
-    qaColumns:['platform'], qaSkipMap:{ platform:1 }
-  };
-
-  function renderExpandedView() {
-    return panelHtml(PRD_CFG.pid, 'Product', 'section-header--product', PRD_CFG.hiddenKeys, PRD_CFG.domainOverrides)
-      + '<div class="divider"></div>'
-      + panelHtml(TEC_CFG.pid, 'Technology', 'section-header--technology', TEC_CFG.hiddenKeys, TEC_CFG.domainOverrides, TEC_CFG.qaColumns, TEC_CFG.qaSkipMap);
-  }
-
-  function bcColHtml(col, cfg) {
-    var pid = cfg.pid, cKey = col.key;
-    var lbl = '<div class="bc-panel-lbl ' + cfg.lblClass + '">' + cfg.label + '</div>';
-    if (cfg.hiddenKeys.indexOf(cKey) !== -1) {
-      return '<div class="bc-panel-col">' + lbl + '</div>';
-    }
-    var domains = cfg.domainOverrides[cKey] || col.domains;
-
-    // Identical to panelHtml info cell
-    var infoHtml = '<div class="bc-info-cell">'
-      + '<div class="bc-info-card">'
-      + '<div class="bc-info-label">Bounded Context</div>'
-      + '<div class="bc-info-body"><div class="bc-icon">' + col.icon + '</div>'
-      + '<div><div class="bc-info-title">' + col.name + '</div>'
-      + '<span class="bc-info-sub">' + (col.sub || LOREM) + '</span></div></div>'
-      + '<div class="bc-info-divider"></div>'
-      + '<div class="bc-info-user">' + slotHtml(pid + '-' + cKey + '-hd') + '</div>'
-      + '</div></div>';
-
-    // Identical to panelHtml domain cell (reuses .row-domsub .row-cell styles)
-    var domCards = domains.map(function(d, dIdx) {
-      var base = pid + '-' + cKey + '-d' + dIdx;
-      if (d.off) return '<div class="domain-card domain-card--off"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">Lorem Ipsum</span></div>';
-      var icons = '';
-      if (d.rowIcons) {
-        var ri = '';
-        for (var j = 0; j < d.rowIcons; j++) ri += '<div class="row-icon">' + slotHtml(base + '-r' + j) + '</div>';
-        icons = '<div class="domain-divider"></div><div class="domain-icon-row">' + ri + '</div>';
-      } else if (typeof d.spine !== 'undefined') {
-        icons = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(base) + '</div>';
-      }
-      return '<div class="domain-card"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">' + (d.sub || 'Lorem Ipsum') + '</span>' + icons + '</div>';
-    }).join('');
-    var domHtml = '<div class="row-domsub"><div class="row-cell">' + domCards + '</div></div>';
-
-    // Identical to panelHtml squad cell (reuses .row-squad .row-cell styles)
-    var hasSpine = domains.some(function(d){ return !d.off && d.spine > 1; });
-    var hasQa = cfg.qaColumns.indexOf(cKey) !== -1;
-    var squadHtml = '';
-    if (hasSpine || hasQa) {
-      var scols = domains.map(function(d, dIdx) {
-        if (d.off) return '<div class="squad-col squad-col--off"></div>';
-        var base = pid + '-' + cKey + '-d' + dIdx, items = '';
-        if (typeof d.spine !== 'undefined' && d.spine > 1)
-          for (var i = 1; i < d.spine; i++) items += '<div>' + slotHtml(base + '-s' + i) + '</div>';
-        return '<div class="squad-col' + (items ? '' : ' squad-col--empty') + '">' + items + '</div>';
-      }).join('');
-      var qaHtml = '';
-      if (hasQa) {
-        var padPct = Math.round((cfg.qaSkipMap[cKey] || 0) / (domains.length || 1) * 100);
-        qaHtml = '<div class="shared-qa-row" style="padding-left:' + padPct + '%"><div class="shared-qa-line"></div><div class="squad-qa-label">QA</div>' + slotHtml(pid + '-' + cKey + '-qa') + '</div>';
-      }
-      squadHtml = '<div class="row-squad"><div class="row-cell"><div class="squad-cols">' + scols + '</div>' + qaHtml + '</div></div>';
-    }
-
-    return '<div class="bc-panel-col">' + lbl + infoHtml + domHtml + squadHtml + '</div>';
-  }
-
-  function renderBcView() {
-    return '<div class="bc-view">'
-      + COLUMNS.map(function(col) {
-          return '<div class="bc-card"><div class="bc-card-body">'
-            + bcColHtml(col, PRD_CFG)
-            + bcColHtml(col, TEC_CFG)
-            + '</div></div>';
-        }).join('')
-      + '</div>';
-  }
-
-  function odTab(view) {
-    document.getElementById('chartsWrap').innerHTML = view === 'expanded' ? renderExpandedView() : renderBcView();
-    Object.keys(OD_SLOTS).forEach(function(sid) { if (OD_SLOTS[sid]) odUpdateBtn(sid, OD_SLOTS[sid]); });
-    document.querySelectorAll('.od-tab').forEach(function(btn) { btn.classList.toggle('active', btn.dataset.view === view); });
-  }
-
-  // ── Boot ─────────────────────────────────────────────────────────────────────
-  document.getElementById('chartsWrap').innerHTML = renderExpandedView();
+    }, ['platform'], { platform:1 });
   odInit();
 </script>
 
