@@ -92,10 +92,25 @@
   .od-slot-btn:hover{border-color:var(--accent);color:var(--accent)}
   .od-slot-btn svg{width:11px;height:11px}
   .od-slot-btn.od-assigned{
-    border:none;background:var(--accent);color:#fff;
-    font-size:7px;font-weight:700;letter-spacing:0;
+    border:none;background:transparent;
+    width:auto;height:auto;border-radius:4px;
+    flex-direction:column;gap:3px;padding:2px 3px;
   }
-  .od-slot-btn.od-assigned:hover{background:var(--accent-hover)}
+  .od-slot-btn.od-assigned:hover{background:var(--subtle)}
+  .od-slot-avatar{
+    width:28px;height:28px;border-radius:50%;
+    background:var(--accent);color:#fff;
+    font-size:8.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;flex-shrink:0;
+  }
+  .od-slot-avatar img{width:100%;height:100%;object-fit:cover}
+  .od-slot-name{
+    font-size:7.5px;font-weight:500;color:var(--text);
+    max-width:52px;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;
+    line-height:1.2;text-align:center;
+  }
 
   /* ── Global dropdown ────────────────────────────────────────────────── */
   #od-dd{
@@ -194,13 +209,14 @@
     if (!btn) return;
     if (user) {
       var ini = ((user.firstName || '')[0] || '') + ((user.lastName || '')[0] || '');
+      var shortName = (user.firstName || '') + ' ' + (((user.lastName || '')[0] || '') + '.').replace(/^\.$/, '');
       btn.className = 'od-slot-btn od-assigned';
       btn.title = (user.firstName || '') + ' ' + (user.lastName || '') + (user.jobTitle ? ' · ' + user.jobTitle : '');
-      if (user.photoUrl) {
-        btn.innerHTML = '<img src="' + user.photoUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover" alt=""/>';
-      } else {
-        btn.innerHTML = ini.toUpperCase() || '?';
-      }
+      var avatarInner = user.photoUrl
+        ? '<img src="' + user.photoUrl + '" alt=""/>'
+        : (ini.toUpperCase() || '?');
+      btn.innerHTML = '<div class="od-slot-avatar">' + avatarInner + '</div>'
+        + '<div class="od-slot-name">' + shortName + '</div>';
     } else {
       btn.className = 'od-slot-btn';
       btn.title = 'Assign person';
@@ -251,9 +267,8 @@
         : ini.toUpperCase();
       html += '<div class="od-dd-item" onclick="odSelect(' + u.id + ')">'
         + '<div class="od-dd-avatar">' + avatar + '</div>'
-        + '<div><div class="od-dd-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div>'
-        + (u.jobTitle ? '<div class="od-dd-sub">' + u.jobTitle + '</div>' : '')
-        + '</div></div>';
+        + '<div class="od-dd-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div>'
+        + '</div>';
     });
     document.getElementById('od-dd-list').innerHTML = html;
   }
