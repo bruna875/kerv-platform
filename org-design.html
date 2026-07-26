@@ -165,28 +165,29 @@
   .od-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
   /* ── By Bounded Context view ──────────────────────────────────────────────── */
-  .bc-view{display:flex;gap:14px}
-  .bc-card{flex:1 1 0;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column}
+  .bc-view{display:flex;gap:14px;overflow-x:auto}
+  .bc-card{flex:1 1 0;min-width:260px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;flex-direction:column}
   .bc-card-hdr{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
   .bc-card-icon{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--subtle);color:var(--accent)}
   .bc-card-icon img{width:18px;height:18px;object-fit:contain}
   .bc-card-icon svg{width:16px;height:16px}
   .bc-card-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
   .bc-card-desc{font-size:10px;color:var(--muted);line-height:1.4;margin-top:2px}
-  .bc-card-body{display:flex;flex:1;align-items:stretch}
-  .bc-panel-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--border-md)}
-  .bc-panel-col:last-child{border-right:none}
-  .bc-panel-lbl{font-size:10px;font-weight:700;padding:6px 10px;color:#fff;letter-spacing:.2px}
+  .bc-card-body{display:flex;flex-direction:column;flex:1}
+  .bc-body-labels{display:flex}
+  .bc-panel-lbl{flex:1;font-size:10px;font-weight:700;padding:6px 10px;color:#fff;letter-spacing:.2px}
   .bc-panel-lbl--product{background:var(--accent)}
   .bc-panel-lbl--technology{background:var(--secondary)}
-  .bc-panel-hd{display:flex;justify-content:center;padding:8px;border-bottom:1px solid var(--border-md)}
-  .bc-panel-domains{display:flex;flex-direction:column;gap:5px;padding:8px;border-bottom:1px solid var(--border-md)}
-  .bc-panel-domains .domain-card{flex:none;min-height:unset}
-  .bc-panel-squads{display:flex;flex-direction:column;flex:1}
-  .bc-panel-squads .squad-cols{width:100%;box-sizing:border-box}
-  .bc-panel-squads .shared-qa-row{margin-top:auto}
-  .bc-panel-na{padding:20px 10px;font-size:10px;color:var(--faint);text-align:center;font-style:italic}
-  .bc-panel-col--na{opacity:.5}
+  .bc-body-row{display:flex;align-items:stretch;border-top:1px solid var(--border-md)}
+  .bc-col-cell{flex:1;min-width:0}
+  .bc-col-cell+.bc-col-cell{border-left:1px solid var(--border-md)}
+  .bc-col-hd{display:flex;justify-content:center;align-items:center;padding:8px}
+  .bc-col-na{display:flex;align-items:center;justify-content:center;padding:20px 8px;font-size:10px;color:var(--faint);font-style:italic;opacity:.6}
+  .bc-col-domains{display:flex;flex-direction:column;gap:5px;padding:8px}
+  .bc-col-domains .domain-card{flex:none;min-height:unset}
+  .bc-col-squad{display:flex;flex-direction:column;flex:1}
+  .bc-col-squad .squad-cols{width:100%;box-sizing:border-box}
+  .bc-col-squad .shared-qa-row{margin-top:auto}
 </style>
 </head>
 <body>
@@ -496,64 +497,93 @@
       + panelHtml(TEC_CFG.pid, 'Technology', 'section-header--technology', TEC_CFG.hiddenKeys, TEC_CFG.domainOverrides, TEC_CFG.qaColumns, TEC_CFG.qaSkipMap);
   }
 
-  function bcPanelColHtml(col, cfg) {
-    var pid = cfg.pid, cKey = col.key;
-    var isHidden = cfg.hiddenKeys.indexOf(cKey) !== -1;
-    var lbl = '<div class="bc-panel-lbl ' + cfg.lblClass + '">' + cfg.label + '</div>';
-    if (isHidden) return '<div class="bc-panel-col bc-panel-col--na col-' + cKey + '">' + lbl + '<div class="bc-panel-na">Not applicable</div></div>';
-
-    var domains = cfg.domainOverrides[cKey] || col.domains;
-
-    var hdHtml = '<div class="bc-panel-hd">' + slotHtml(pid + '-' + cKey + '-hd') + '</div>';
-
-    var domHtml = '<div class="bc-panel-domains">'
-      + domains.map(function(d, dIdx) {
-          var base = pid + '-' + cKey + '-d' + dIdx;
-          if (d.off) return '<div class="domain-card domain-card--off"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">Lorem Ipsum</span></div>';
-          var icons = '';
-          if (d.rowIcons) {
-            var ri = '';
-            for (var j = 0; j < d.rowIcons; j++) ri += '<div class="row-icon">' + slotHtml(base + '-r' + j) + '</div>';
-            icons = '<div class="domain-divider"></div><div class="domain-icon-row">' + ri + '</div>';
-          } else if (typeof d.spine !== 'undefined') {
-            icons = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(base) + '</div>';
-          }
-          return '<div class="domain-card"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">' + (d.sub || 'Lorem Ipsum') + '</span>' + icons + '</div>';
-        }).join('')
-      + '</div>';
-
-    var hasSpine = domains.some(function(d){ return !d.off && d.spine > 1; });
-    var hasQa = cfg.qaColumns.indexOf(cKey) !== -1;
-    var squadHtml = '';
-    if (hasSpine || hasQa) {
-      var scols = domains.map(function(d, dIdx) {
-        if (d.off) return '<div class="squad-col squad-col--off"></div>';
-        var base = pid + '-' + cKey + '-d' + dIdx, items = '';
-        if (typeof d.spine !== 'undefined' && d.spine > 1)
-          for (var i = 1; i < d.spine; i++) items += '<div>' + slotHtml(base + '-s' + i) + '</div>';
-        return '<div class="squad-col' + (items ? '' : ' squad-col--empty') + '">' + items + '</div>';
-      }).join('');
-      var qaHtml = '';
-      if (hasQa) {
-        var padPct = Math.round((cfg.qaSkipMap[cKey] || 0) / (domains.length || 1) * 100);
-        qaHtml = '<div class="shared-qa-row" style="padding-left:' + padPct + '%"><div class="shared-qa-line"></div><div class="squad-qa-label">QA</div>' + slotHtml(pid + '-' + cKey + '-qa') + '</div>';
+  function bcDomainCellHtml(col, cfg) {
+    var domains = cfg.domainOverrides[col.key] || col.domains;
+    return domains.map(function(d, dIdx) {
+      var base = cfg.pid + '-' + col.key + '-d' + dIdx;
+      if (d.off) return '<div class="domain-card domain-card--off"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">Lorem Ipsum</span></div>';
+      var icons = '';
+      if (d.rowIcons) {
+        var ri = '';
+        for (var j = 0; j < d.rowIcons; j++) ri += '<div class="row-icon">' + slotHtml(base + '-r' + j) + '</div>';
+        icons = '<div class="domain-divider"></div><div class="domain-icon-row">' + ri + '</div>';
+      } else if (typeof d.spine !== 'undefined') {
+        icons = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(base) + '</div>';
       }
-      squadHtml = '<div class="bc-panel-squads"><div class="squad-cols">' + scols + '</div>' + qaHtml + '</div>';
-    }
+      return '<div class="domain-card"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">' + (d.sub || 'Lorem Ipsum') + '</span>' + icons + '</div>';
+    }).join('');
+  }
 
-    return '<div class="bc-panel-col col-' + cKey + '">' + lbl + hdHtml + domHtml + squadHtml + '</div>';
+  function bcSquadCellHtml(col, cfg) {
+    var domains = cfg.domainOverrides[col.key] || col.domains;
+    var hasSpine = domains.some(function(d){ return !d.off && d.spine > 1; });
+    var hasQa = cfg.qaColumns.indexOf(col.key) !== -1;
+    if (!hasSpine && !hasQa) return '';
+    var scols = domains.map(function(d, dIdx) {
+      if (d.off) return '<div class="squad-col squad-col--off"></div>';
+      var base = cfg.pid + '-' + col.key + '-d' + dIdx, items = '';
+      if (typeof d.spine !== 'undefined' && d.spine > 1)
+        for (var i = 1; i < d.spine; i++) items += '<div>' + slotHtml(base + '-s' + i) + '</div>';
+      return '<div class="squad-col' + (items ? '' : ' squad-col--empty') + '">' + items + '</div>';
+    }).join('');
+    var qaHtml = '';
+    if (hasQa) {
+      var padPct = Math.round((cfg.qaSkipMap[col.key] || 0) / (domains.length || 1) * 100);
+      qaHtml = '<div class="shared-qa-row" style="padding-left:' + padPct + '%"><div class="shared-qa-line"></div><div class="squad-qa-label">QA</div>' + slotHtml(cfg.pid + '-' + col.key + '-qa') + '</div>';
+    }
+    return '<div class="squad-cols">' + scols + '</div>' + qaHtml;
   }
 
   function renderBcView() {
+    var cfgs = [PRD_CFG, TEC_CFG];
     return '<div class="bc-view">'
       + COLUMNS.map(function(col) {
+          var anySquad = cfgs.some(function(cfg) {
+            if (cfg.hiddenKeys.indexOf(col.key) !== -1) return false;
+            return !!bcSquadCellHtml(col, cfg);
+          });
+
+          var labelsRow = '<div class="bc-body-labels">'
+            + cfgs.map(function(cfg) {
+                return '<div class="bc-panel-lbl ' + cfg.lblClass + '">' + cfg.label + '</div>';
+              }).join('')
+            + '</div>';
+
+          var headRow = '<div class="bc-body-row">'
+            + cfgs.map(function(cfg) {
+                var hidden = cfg.hiddenKeys.indexOf(col.key) !== -1;
+                if (hidden) return '<div class="bc-col-cell bc-col-na">Not applicable</div>';
+                return '<div class="bc-col-cell bc-col-hd">' + slotHtml(cfg.pid + '-' + col.key + '-hd') + '</div>';
+              }).join('')
+            + '</div>';
+
+          var domRow = '<div class="bc-body-row">'
+            + cfgs.map(function(cfg) {
+                var hidden = cfg.hiddenKeys.indexOf(col.key) !== -1;
+                if (hidden) return '<div class="bc-col-cell"></div>';
+                return '<div class="bc-col-cell bc-col-domains">' + bcDomainCellHtml(col, cfg) + '</div>';
+              }).join('')
+            + '</div>';
+
+          var squadRow = '';
+          if (anySquad) {
+            squadRow = '<div class="bc-body-row">'
+              + cfgs.map(function(cfg) {
+                  var hidden = cfg.hiddenKeys.indexOf(col.key) !== -1;
+                  if (hidden) return '<div class="bc-col-cell"></div>';
+                  var inner = bcSquadCellHtml(col, cfg);
+                  if (!inner) return '<div class="bc-col-cell"></div>';
+                  return '<div class="bc-col-cell bc-col-squad">' + inner + '</div>';
+                }).join('')
+              + '</div>';
+          }
+
           return '<div class="bc-card">'
             + '<div class="bc-card-hdr"><div class="bc-card-icon">' + col.icon + '</div>'
             + '<div><div class="bc-card-name">' + col.name + '</div>'
             + (col.sub ? '<div class="bc-card-desc">' + col.sub + '</div>' : '') + '</div></div>'
             + '<div class="bc-card-body">'
-            + bcPanelColHtml(col, PRD_CFG)
-            + bcPanelColHtml(col, TEC_CFG)
+            + labelsRow + headRow + domRow + squadRow
             + '</div></div>';
         }).join('')
       + '</div>';
