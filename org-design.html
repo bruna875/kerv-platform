@@ -71,8 +71,8 @@
   .squad-spine::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
   .squad-qa-sep{width:32px;height:1px;background:var(--border-md);margin:4px 0 0}
   .squad-qa-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
-  .shared-qa{position:absolute;left:0;right:0;top:220px;display:flex;flex-direction:column;align-items:center;gap:6px}
-  .shared-qa-line{width:90%;height:1px;background:var(--border-md)}
+  .shared-qa{position:absolute;right:0;top:220px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .shared-qa-line{width:100%;height:1px;background:var(--border-md)}
 
   .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
   .row-squad  .row-cell,.row-squad  .glabel{border-top:1px solid var(--border-md)}
@@ -318,10 +318,11 @@
   var LOREM = 'Lorem ipsum dolor sit amet';
 
   // ── Panel renderer ──────────────────────────────────────────────────────────
-  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides, qaColumns) {
+  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides, qaColumns, qaSkipMap) {
     hiddenKeys = hiddenKeys || [];
     domainOverrides = domainOverrides || {};
     qaColumns = qaColumns || [];
+    qaSkipMap = qaSkipMap || {};
 
     var infoCells = COLUMNS.map(function(c) {
       return '<div class="bc-info-cell col-' + c.key + '">'
@@ -399,8 +400,12 @@
 
     var squadCells = COLUMNS.map(function(c) {
       if (qaColumns.indexOf(c.key) !== -1) {
+        var domains = domainOverrides[c.key] || (COLUMNS.filter(function(x){return x.key===c.key;})[0]||{}).domains || [];
+        var skip = qaSkipMap[c.key] || 0;
+        var total = domains.length || 1;
+        var leftPct = Math.round(skip / total * 100) + '%';
         return '<div class="row-cell col-' + c.key + '" style="position:relative">'
-          + '<div class="shared-qa">'
+          + '<div class="shared-qa" style="left:' + leftPct + '">'
           + '<div class="shared-qa-line"></div>'
           + '<div class="squad-qa-label">QA</div>'
           + slotHtml(pid + '-' + c.key + '-qa')
@@ -430,7 +435,7 @@
         api:      [{ title:'Content and Live', spine:3 }, { title:'Commerce', spine:1 }],
         reporting:[{ title:'R&D', spine:2 }, { title:'Data', spine:3 }],
         platform: [{ title:'Product Design', off:true }, { title:'Core and Publisher', spine:6 }, { title:'Ad Operations Tools', spine:6 }]
-      }, ['platform']);
+      }, ['platform'], { platform: 1 });
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
   odInit();
