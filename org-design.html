@@ -173,12 +173,7 @@
   .bc-panel-lbl{font-size:10px;font-weight:700;padding:6px 10px;color:#fff;letter-spacing:.2px}
   .bc-panel-lbl--product{background:var(--accent)}
   .bc-panel-lbl--technology{background:var(--secondary)}
-  .bc-panel-info{padding:8px;border-bottom:1px solid var(--border-md)}
-  .bc-panel-dom{display:flex;flex-direction:column;gap:5px;padding:8px;border-bottom:1px solid var(--border-md)}
-  .bc-panel-dom .domain-card{flex:none;min-height:unset}
-  .bc-panel-squad{display:flex;flex-direction:column;flex:1}
-  .bc-panel-squad .squad-cols{width:100%;box-sizing:border-box}
-  .bc-panel-squad .shared-qa-row{margin-top:auto}
+  .bc-panel-col .row-squad{flex:1}
 </style>
 </head>
 <body>
@@ -488,7 +483,7 @@
       + panelHtml(TEC_CFG.pid, 'Technology', 'section-header--technology', TEC_CFG.hiddenKeys, TEC_CFG.domainOverrides, TEC_CFG.qaColumns, TEC_CFG.qaSkipMap);
   }
 
-  function bcSingleColHtml(col, cfg) {
+  function bcColHtml(col, cfg) {
     var pid = cfg.pid, cKey = col.key;
     var lbl = '<div class="bc-panel-lbl ' + cfg.lblClass + '">' + cfg.label + '</div>';
     if (cfg.hiddenKeys.indexOf(cKey) !== -1) {
@@ -496,35 +491,34 @@
     }
     var domains = cfg.domainOverrides[cKey] || col.domains;
 
-    // Info card — identical to expanded view info cell
-    var infoHtml = '<div class="bc-panel-info">'
+    // Identical to panelHtml info cell
+    var infoHtml = '<div class="bc-info-cell">'
       + '<div class="bc-info-card">'
       + '<div class="bc-info-label">Bounded Context</div>'
       + '<div class="bc-info-body"><div class="bc-icon">' + col.icon + '</div>'
       + '<div><div class="bc-info-title">' + col.name + '</div>'
-      + '<span class="bc-info-sub">' + (col.sub || '') + '</span></div></div>'
+      + '<span class="bc-info-sub">' + (col.sub || LOREM) + '</span></div></div>'
       + '<div class="bc-info-divider"></div>'
       + '<div class="bc-info-user">' + slotHtml(pid + '-' + cKey + '-hd') + '</div>'
       + '</div></div>';
 
-    // Domain cards — identical to expanded view domain cell
-    var domHtml = '<div class="bc-panel-dom">'
-      + domains.map(function(d, dIdx) {
-          var base = pid + '-' + cKey + '-d' + dIdx;
-          if (d.off) return '<div class="domain-card domain-card--off"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">Lorem Ipsum</span></div>';
-          var icons = '';
-          if (d.rowIcons) {
-            var ri = '';
-            for (var j = 0; j < d.rowIcons; j++) ri += '<div class="row-icon">' + slotHtml(base + '-r' + j) + '</div>';
-            icons = '<div class="domain-divider"></div><div class="domain-icon-row">' + ri + '</div>';
-          } else if (typeof d.spine !== 'undefined') {
-            icons = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(base) + '</div>';
-          }
-          return '<div class="domain-card"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">' + (d.sub || 'Lorem Ipsum') + '</span>' + icons + '</div>';
-        }).join('')
-      + '</div>';
+    // Identical to panelHtml domain cell (reuses .row-domsub .row-cell styles)
+    var domCards = domains.map(function(d, dIdx) {
+      var base = pid + '-' + cKey + '-d' + dIdx;
+      if (d.off) return '<div class="domain-card domain-card--off"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">Lorem Ipsum</span></div>';
+      var icons = '';
+      if (d.rowIcons) {
+        var ri = '';
+        for (var j = 0; j < d.rowIcons; j++) ri += '<div class="row-icon">' + slotHtml(base + '-r' + j) + '</div>';
+        icons = '<div class="domain-divider"></div><div class="domain-icon-row">' + ri + '</div>';
+      } else if (typeof d.spine !== 'undefined') {
+        icons = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(base) + '</div>';
+      }
+      return '<div class="domain-card"><span class="domain-label">Domain</span><div class="domain-title">' + d.title + '</div><span class="domain-sub">' + (d.sub || 'Lorem Ipsum') + '</span>' + icons + '</div>';
+    }).join('');
+    var domHtml = '<div class="row-domsub"><div class="row-cell">' + domCards + '</div></div>';
 
-    // Squad cols — identical to expanded view squad cell
+    // Identical to panelHtml squad cell (reuses .row-squad .row-cell styles)
     var hasSpine = domains.some(function(d){ return !d.off && d.spine > 1; });
     var hasQa = cfg.qaColumns.indexOf(cKey) !== -1;
     var squadHtml = '';
@@ -541,7 +535,7 @@
         var padPct = Math.round((cfg.qaSkipMap[cKey] || 0) / (domains.length || 1) * 100);
         qaHtml = '<div class="shared-qa-row" style="padding-left:' + padPct + '%"><div class="shared-qa-line"></div><div class="squad-qa-label">QA</div>' + slotHtml(pid + '-' + cKey + '-qa') + '</div>';
       }
-      squadHtml = '<div class="bc-panel-squad"><div class="squad-cols">' + scols + '</div>' + qaHtml + '</div>';
+      squadHtml = '<div class="row-squad"><div class="row-cell"><div class="squad-cols">' + scols + '</div>' + qaHtml + '</div></div>';
     }
 
     return '<div class="bc-panel-col">' + lbl + infoHtml + domHtml + squadHtml + '</div>';
@@ -551,8 +545,8 @@
     return '<div class="bc-view">'
       + COLUMNS.map(function(col) {
           return '<div class="bc-card"><div class="bc-card-body">'
-            + bcSingleColHtml(col, PRD_CFG)
-            + bcSingleColHtml(col, TEC_CFG)
+            + bcColHtml(col, PRD_CFG)
+            + bcColHtml(col, TEC_CFG)
             + '</div></div>';
         }).join('')
       + '</div>';
