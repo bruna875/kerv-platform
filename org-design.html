@@ -71,6 +71,8 @@
   .squad-spine::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
   .squad-qa-sep{width:32px;height:1px;background:var(--border-md);margin:4px 0 0}
   .squad-qa-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
+  .shared-qa{position:absolute;left:0;right:0;top:220px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .shared-qa-line{width:90%;height:1px;background:var(--border-md)}
 
   .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
   .row-squad  .row-cell,.row-squad  .glabel{border-top:1px solid var(--border-md)}
@@ -316,9 +318,10 @@
   var LOREM = 'Lorem ipsum dolor sit amet';
 
   // ── Panel renderer ──────────────────────────────────────────────────────────
-  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides) {
+  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides, qaColumns) {
     hiddenKeys = hiddenKeys || [];
     domainOverrides = domainOverrides || {};
+    qaColumns = qaColumns || [];
 
     var infoCells = COLUMNS.map(function(c) {
       return '<div class="bc-info-cell col-' + c.key + '">'
@@ -394,12 +397,25 @@
       }).join('');
     }
 
+    var squadCells = COLUMNS.map(function(c) {
+      if (qaColumns.indexOf(c.key) !== -1) {
+        return '<div class="row-cell col-' + c.key + '" style="position:relative">'
+          + '<div class="shared-qa">'
+          + '<div class="shared-qa-line"></div>'
+          + '<div class="squad-qa-label">QA</div>'
+          + slotHtml(pid + '-' + c.key + '-qa')
+          + '</div>'
+          + '</div>';
+      }
+      return '<div class="row-cell col-' + c.key + '"></div>';
+    }).join('');
+
     return '<div class="panel">'
       + '<div class="section-card">'
       +   '<div class="section-header ' + headerClass + '">' + title + '</div>'
       +   '<div class="grid"><div></div>' + infoCells + '</div>'
       +   '<div class="grid row-domsub"><div class="glabel">Domain / Subdomain</div>' + domainCells + '</div>'
-      +   '<div class="grid row-squad"><div class="glabel">Squads</div>' + emptyRow() + '</div>'
+      +   '<div class="grid row-squad"><div class="glabel">Squads</div>' + squadCells + '</div>'
       + '</div>'
       + '</div>';
   }
@@ -413,8 +429,8 @@
     + panelHtml('tec', 'Technology', 'section-header--technology', [], {
         api:      [{ title:'Content and Live', spine:3 }, { title:'Commerce', spine:1 }],
         reporting:[{ title:'R&D', spine:2 }, { title:'Data', spine:3 }],
-        platform: [{ title:'Product Design', off:true }, { title:'Core and Publisher', spine:6, qaSlot:true }, { title:'Ad Operations Tools', spine:6, qaSlot:true }]
-      });
+        platform: [{ title:'Product Design', off:true }, { title:'Core and Publisher', spine:6 }, { title:'Ad Operations Tools', spine:6 }]
+      }, ['platform']);
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
   odInit();
