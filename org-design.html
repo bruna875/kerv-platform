@@ -53,7 +53,7 @@
 
   .row-cell{display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:12px;padding:14px 10px}
   .row-domsub .row-cell,.row-domsub .glabel{height:128px}
-  .row-squad  .row-cell,.row-squad  .glabel{height:220px}
+  .row-squad  .row-cell,.row-squad  .glabel{height:300px}
 
   .row-domsub .row-cell{display:flex;flex-wrap:nowrap;align-content:stretch;justify-content:flex-start;align-items:stretch;gap:6px;padding:10px;position:relative}
   .domain-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 7px;flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column}
@@ -69,6 +69,8 @@
 
   .squad-spine{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:24px}
   .squad-spine::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
+  .squad-qa-sep{width:32px;height:1px;background:var(--border-md);margin:4px 0 0}
+  .squad-qa-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
 
   .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
   .row-squad  .row-cell,.row-squad  .glabel{border-top:1px solid var(--border-md)}
@@ -81,7 +83,7 @@
   /* ── User slot buttons ─────────────────────────────────────────────── */
   .od-slot{display:inline-flex;position:relative}
   .od-slot-btn{
-    width:20px;height:20px;border-radius:50%;
+    width:28px;height:28px;border-radius:50%;
     border:1.5px dashed var(--border-md);
     background:transparent;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
@@ -90,7 +92,7 @@
     font-family:inherit;
   }
   .od-slot-btn:hover{border-color:var(--accent);color:var(--accent)}
-  .od-slot-btn svg{width:11px;height:11px}
+  .od-slot-btn svg{width:14px;height:14px}
   .od-slot-btn.od-assigned{
     border:none;background:transparent;
     width:auto;height:auto;border-radius:4px;
@@ -360,10 +362,15 @@
           iconsHtml = '<div class="domain-divider"></div><div class="domain-icon-row">' + rowIconsHtml + '</div>';
         } else if (typeof d.spine !== 'undefined') {
           iconsHtml = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(domSlotBase) + '</div>';
-          if (d.spine > 1) {
+          if (d.spine > 1 || d.qaSlot) {
             var extraHtml = '';
             for (var i = 1; i < d.spine; i++) {
               extraHtml += '<div class="spine-icon">' + slotHtml(domSlotBase + '-s' + i) + '</div>';
+            }
+            if (d.qaSlot) {
+              extraHtml += '<div class="squad-qa-sep"></div>'
+                + '<div class="squad-qa-label">QA</div>'
+                + '<div class="spine-icon">' + slotHtml(domSlotBase + '-qa') + '</div>';
             }
             spineHtml = '<div class="squad-spine">' + extraHtml + '</div>';
           }
@@ -406,7 +413,7 @@
     + panelHtml('tec', 'Technology', 'section-header--technology', [], {
         api:      [{ title:'Content and Live', spine:3 }, { title:'Commerce', spine:1 }],
         reporting:[{ title:'R&D', spine:2 }, { title:'Data', spine:3 }],
-        platform: [{ title:'Product Design', off:true }, { title:'Core e VOD', spine:6 }, { title:'Ads Platform', spine:6 }]
+        platform: [{ title:'Product Design', off:true }, { title:'Core e VOD', spine:6 }, { title:'Ads Platform', spine:6, qaSlot:true }]
       });
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
