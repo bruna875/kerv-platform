@@ -69,9 +69,7 @@
 
   .squad-spine{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:24px}
   .squad-spine::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
-  .row-qa .row-cell{height:55px;display:flex;align-items:center;justify-content:center}
-  .row-qa .glabel{height:55px}
-  .qa-content{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;border-top:1px solid var(--border-md);padding-top:10px}
+  .qa-content{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:10px;border-top:1px solid var(--border-md);width:60px}
   .qa-content-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
 
   .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
@@ -392,9 +390,9 @@
       }).join('');
     }
 
-    var qaRowCells = COLUMNS.map(function(c) {
+    var squadCells = COLUMNS.map(function(c) {
       if (qaColumns.indexOf(c.key) !== -1) {
-        return '<div class="row-cell col-' + c.key + '">'
+        return '<div class="row-cell col-' + c.key + '" style="display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px">'
           + '<div class="qa-content">'
           + '<div class="qa-content-label">QA</div>'
           + slotHtml(pid + '-' + c.key + '-qa')
@@ -409,8 +407,7 @@
       +   '<div class="section-header ' + headerClass + '">' + title + '</div>'
       +   '<div class="grid"><div></div>' + infoCells + '</div>'
       +   '<div class="grid row-domsub"><div class="glabel">Domain / Subdomain</div>' + domainCells + '</div>'
-      +   '<div class="grid row-squad"><div class="glabel">Squads</div>' + emptyRow() + '</div>'
-      +   (qaColumns.length ? '<div class="grid row-qa"><div class="glabel"></div>' + qaRowCells + '</div>' : '')
+      +   '<div class="grid row-squad"><div class="glabel">Squads</div>' + squadCells + '</div>'
       + '</div>'
       + '</div>';
   }
