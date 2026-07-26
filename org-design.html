@@ -69,8 +69,10 @@
 
   .squad-spine{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:24px}
   .squad-spine::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
-  .squad-qa-sep{width:32px;height:1px;background:var(--border-md);margin:4px 0 0}
-  .squad-qa-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
+  .row-qa .row-cell{height:55px;display:flex;align-items:center;justify-content:center}
+  .row-qa .glabel{height:55px}
+  .qa-content{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;border-top:1px solid var(--border-md);padding-top:10px}
+  .qa-content-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
 
   .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
   .row-squad  .row-cell,.row-squad  .glabel{border-top:1px solid var(--border-md)}
@@ -316,9 +318,10 @@
   var LOREM = 'Lorem ipsum dolor sit amet';
 
   // ── Panel renderer ──────────────────────────────────────────────────────────
-  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides) {
+  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides, qaColumns) {
     hiddenKeys = hiddenKeys || [];
     domainOverrides = domainOverrides || {};
+    qaColumns = qaColumns || [];
 
     var infoCells = COLUMNS.map(function(c) {
       return '<div class="bc-info-cell col-' + c.key + '">'
@@ -362,15 +365,10 @@
           iconsHtml = '<div class="domain-divider"></div><div class="domain-icon-row">' + rowIconsHtml + '</div>';
         } else if (typeof d.spine !== 'undefined') {
           iconsHtml = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(domSlotBase) + '</div>';
-          if (d.spine > 1 || d.qaSlot) {
+          if (d.spine > 1) {
             var extraHtml = '';
             for (var i = 1; i < d.spine; i++) {
               extraHtml += '<div class="spine-icon">' + slotHtml(domSlotBase + '-s' + i) + '</div>';
-            }
-            if (d.qaSlot) {
-              extraHtml += '<div class="squad-qa-sep"></div>'
-                + '<div class="squad-qa-label">QA</div>'
-                + '<div class="spine-icon">' + slotHtml(domSlotBase + '-qa') + '</div>';
             }
             spineHtml = '<div class="squad-spine">' + extraHtml + '</div>';
           }
@@ -394,12 +392,25 @@
       }).join('');
     }
 
+    var qaRowCells = COLUMNS.map(function(c) {
+      if (qaColumns.indexOf(c.key) !== -1) {
+        return '<div class="row-cell col-' + c.key + '">'
+          + '<div class="qa-content">'
+          + '<div class="qa-content-label">QA</div>'
+          + slotHtml(pid + '-' + c.key + '-qa')
+          + '</div>'
+          + '</div>';
+      }
+      return '<div class="row-cell col-' + c.key + '"></div>';
+    }).join('');
+
     return '<div class="panel">'
       + '<div class="section-card">'
       +   '<div class="section-header ' + headerClass + '">' + title + '</div>'
       +   '<div class="grid"><div></div>' + infoCells + '</div>'
       +   '<div class="grid row-domsub"><div class="glabel">Domain / Subdomain</div>' + domainCells + '</div>'
       +   '<div class="grid row-squad"><div class="glabel">Squads</div>' + emptyRow() + '</div>'
+      +   (qaColumns.length ? '<div class="grid row-qa"><div class="glabel"></div>' + qaRowCells + '</div>' : '')
       + '</div>'
       + '</div>';
   }
@@ -413,8 +424,8 @@
     + panelHtml('tec', 'Technology', 'section-header--technology', [], {
         api:      [{ title:'Content and Live', spine:3 }, { title:'Commerce', spine:1 }],
         reporting:[{ title:'R&D', spine:2 }, { title:'Data', spine:3 }],
-        platform: [{ title:'Product Design', off:true }, { title:'Core and Publisher', spine:6, qaSlot:true }, { title:'Ad Operations Tools', spine:6, qaSlot:true }]
-      });
+        platform: [{ title:'Product Design', off:true }, { title:'Core and Publisher', spine:6 }, { title:'Ad Operations Tools', spine:6 }]
+      }, ['platform']);
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
   odInit();
