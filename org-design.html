@@ -53,7 +53,8 @@
 
   .row-cell{display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:12px;padding:14px 10px}
   .row-domsub .row-cell,.row-domsub .glabel{height:128px}
-  .row-squad  .row-cell,.row-squad  .glabel{height:300px}
+  .row-squad  .row-cell,.row-squad  .glabel{min-height:80px}
+  .row-squad  .row-cell{height:auto;display:flex;flex-direction:column;align-self:start}
 
   .row-domsub .row-cell{display:flex;flex-wrap:nowrap;align-content:stretch;justify-content:flex-start;align-items:stretch;gap:6px;padding:10px;position:relative}
   .domain-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 7px;flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column}
@@ -67,12 +68,15 @@
   .domain-icon-row{display:flex;justify-content:center;gap:8px}
   .row-icon{display:flex}
 
-  .squad-spine{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:24px;z-index:1}
-  .squad-spine::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
-  .squad-qa-sep{width:32px;height:1px;background:var(--border-md);margin:4px 0 0}
+  .squad-cols{display:flex;gap:6px;padding:0 10px 10px;align-items:flex-start}
+  .squad-col{display:flex;flex-direction:column;align-items:center;gap:10px;flex:1 1 0;padding-top:24px;position:relative}
+  .squad-col::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
+  .squad-col--off{flex:1 1 0}
+  .squad-col--empty{flex:1 1 0}
+  .squad-col--empty::before{display:none}
   .squad-qa-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
-  .shared-qa{position:absolute;right:0;top:220px;display:flex;flex-direction:column;align-items:center;gap:6px}
-  .shared-qa-line{width:100%;height:1px;background:var(--border-md)}
+  .shared-qa-row{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 10px 14px}
+  .shared-qa-line{height:1px;background:var(--border-md);width:100%}
 
   .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
   .row-squad  .row-cell,.row-squad  .glabel{border-top:1px solid var(--border-md)}
@@ -356,7 +360,6 @@
 
         var domSlotBase = pid + '-' + c.key + '-d' + dIdx;
         var iconsHtml = '';
-        var spineHtml = '';
 
         if (d.rowIcons) {
           var rowIconsHtml = '';
@@ -366,18 +369,6 @@
           iconsHtml = '<div class="domain-divider"></div><div class="domain-icon-row">' + rowIconsHtml + '</div>';
         } else if (typeof d.spine !== 'undefined') {
           iconsHtml = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(domSlotBase) + '</div>';
-          if (d.spine > 1 || d.qaSlot) {
-            var extraHtml = '';
-            for (var i = 1; i < d.spine; i++) {
-              extraHtml += '<div class="spine-icon">' + slotHtml(domSlotBase + '-s' + i) + '</div>';
-            }
-            if (d.qaSlot) {
-              extraHtml += '<div class="squad-qa-sep"></div>'
-                + '<div class="squad-qa-label">QA</div>'
-                + '<div class="spine-icon">' + slotHtml(domSlotBase + '-qa') + '</div>';
-            }
-            spineHtml = '<div class="squad-spine">' + extraHtml + '</div>';
-          }
         }
 
         return '<div class="domain-card">'
@@ -385,7 +376,6 @@
           + '<div class="domain-title">' + d.title + '</div>'
           + '<span class="domain-sub">' + (d.sub || 'Lorem Ipsum') + '</span>'
           + iconsHtml
-          + spineHtml
           + '</div>';
       }).join('');
 
@@ -399,20 +389,40 @@
     }
 
     var squadCells = COLUMNS.map(function(c) {
-      if (qaColumns.indexOf(c.key) !== -1) {
-        var domains = domainOverrides[c.key] || (COLUMNS.filter(function(x){return x.key===c.key;})[0]||{}).domains || [];
+      if (hiddenKeys.indexOf(c.key) !== -1) return '<div class="row-cell col-' + c.key + '"></div>';
+      var domains = domainOverrides[c.key] || (COLUMNS.filter(function(x){return x.key===c.key;})[0]||{}).domains || [];
+      var hasSpine = domains.some(function(d){ return !d.off && d.spine > 1; });
+      var hasQa = qaColumns.indexOf(c.key) !== -1;
+      if (!hasSpine && !hasQa) return '<div class="row-cell col-' + c.key + '"></div>';
+
+      var cols = domains.map(function(d, dIdx) {
+        if (d.off) return '<div class="squad-col squad-col--off"></div>';
+        var domSlotBase = pid + '-' + c.key + '-d' + dIdx;
+        var items = '';
+        if (typeof d.spine !== 'undefined' && d.spine > 1) {
+          for (var i = 1; i < d.spine; i++) {
+            items += '<div>' + slotHtml(domSlotBase + '-s' + i) + '</div>';
+          }
+        }
+        return '<div class="squad-col' + (items ? '' : ' squad-col--empty') + '">' + items + '</div>';
+      }).join('');
+
+      var qaHtml = '';
+      if (hasQa) {
         var skip = qaSkipMap[c.key] || 0;
         var total = domains.length || 1;
-        var leftPct = Math.round(skip / total * 100) + '%';
-        return '<div class="row-cell col-' + c.key + '" style="position:relative">'
-          + '<div class="shared-qa" style="left:' + leftPct + '">'
+        var padPct = Math.round(skip / total * 100);
+        qaHtml = '<div class="shared-qa-row" style="padding-left:' + padPct + '%">'
           + '<div class="shared-qa-line"></div>'
           + '<div class="squad-qa-label">QA</div>'
           + slotHtml(pid + '-' + c.key + '-qa')
-          + '</div>'
           + '</div>';
       }
-      return '<div class="row-cell col-' + c.key + '"></div>';
+
+      return '<div class="row-cell col-' + c.key + '">'
+        + '<div class="squad-cols">' + cols + '</div>'
+        + qaHtml
+        + '</div>';
     }).join('');
 
     return '<div class="panel">'
