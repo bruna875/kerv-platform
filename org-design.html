@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Org Design</title>
+<link rel="icon" type="image/png" href="/kerv-one-favicon.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/style.css"/>
+<style>
+  html,body{height:auto !important;overflow:auto !important}
+  body{padding:28px 32px 80px;font-family:'Geist',system-ui,sans-serif}
+
+  :root{
+    --col-shared:    #F1F5F9;
+    --col-api:       #EEF4FF;
+    --col-platform:  #FDF0F4;
+    --col-reporting: #F0FBF4;
+  }
+
+  .top-bar{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:18px;margin-bottom:28px}
+  .top-bar img{width:26px;height:26px;flex-shrink:0}
+  .top-bar-title{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+  .top-bar-sub{font-size:12px;color:var(--muted)}
+
+  .page-inner{width:max-content}
+  .charts-wrap{display:flex;align-items:flex-start;gap:0}
+  .divider{width:1px;align-self:stretch;background:var(--border-md);margin:0 28px;flex-shrink:0}
+  .panel{width:1040px;flex-shrink:0}
+
+  .section-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .section-header{color:#fff;font-size:16px;font-weight:700;padding:14px 20px}
+  .section-header--product{background:var(--accent)}
+  .section-header--technology{background:var(--secondary)}
+
+  .grid{display:grid;grid-template-columns:110px 1fr 1fr 1.5fr 0.7fr}
+  .grid > div:nth-child(3),.grid > div:nth-child(4),.grid > div:nth-child(5){border-left:1px dashed rgba(15,23,42,.12)}
+
+  .glabel{display:flex;align-items:flex-start;padding:12px 12px 0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);background:var(--surface)}
+
+  .bc-info-cell{padding:10px 8px 4px}
+  .bc-info-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;height:100%;display:flex;flex-direction:column}
+  .bc-info-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:6px}
+  .bc-info-body{display:flex;align-items:flex-start;gap:9px}
+  .bc-info-title{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.3}
+  .bc-info-sub{font-size:10.5px;font-weight:400;color:var(--muted);margin-top:2px;line-height:1.35;display:block}
+  .bc-info-divider{height:1px;background:var(--border);margin:auto 0 9px}
+  .bc-info-user{display:flex;justify-content:center}
+
+  .bc-icon{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--subtle);color:var(--accent)}
+  .bc-icon img{width:18px;height:18px;object-fit:contain}
+  .bc-icon svg{width:16px;height:16px}
+
+  .row-cell{display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:12px;padding:14px 10px}
+  .row-domsub .row-cell,.row-domsub .glabel{height:128px}
+  .row-squad  .row-cell,.row-squad  .glabel{height:220px}
+
+  .row-domsub .row-cell{display:flex;flex-wrap:nowrap;align-content:stretch;justify-content:flex-start;align-items:stretch;gap:6px;padding:10px;position:relative}
+  .domain-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 7px;flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column}
+  .domain-card--off{opacity:.4}
+  .domain-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--faint);display:block}
+  .domain-title{font-size:9.5px;font-weight:600;color:var(--text);line-height:1.25;margin-top:1px}
+  .domain-sub{font-size:8.5px;font-weight:400;color:var(--muted);line-height:1.3;margin-top:2px;display:block}
+
+  .domain-divider{height:1px;background:var(--border);margin:auto 0 6px}
+  .domain-icon{display:flex;justify-content:center}
+  .domain-icon-row{display:flex;justify-content:center;gap:8px}
+  .row-icon{display:flex}
+
+  .squad-spine{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:24px}
+  .squad-spine::before{content:'';position:absolute;top:0;left:50%;width:1px;height:24px;background:var(--border-md);transform:translateX(-50%)}
+
+  .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
+  .row-squad  .row-cell,.row-squad  .glabel{border-top:1px solid var(--border-md)}
+
+  .col-shared    {background:var(--col-shared)}
+  .col-api       {background:var(--col-api)}
+  .col-platform  {background:var(--col-platform)}
+  .col-reporting {background:var(--col-reporting)}
+
+  /* ── User slot buttons ─────────────────────────────────────────────── */
+  .od-slot{display:inline-flex;position:relative}
+  .od-slot-btn{
+    width:20px;height:20px;border-radius:50%;
+    border:1.5px dashed var(--border-md);
+    background:transparent;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    padding:0;color:var(--faint);
+    transition:border-color .15s,color .15s,background .15s;
+    font-family:inherit;
+  }
+  .od-slot-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .od-slot-btn svg{width:11px;height:11px}
+  .od-slot-btn.od-assigned{
+    border:none;background:var(--accent);color:#fff;
+    font-size:7px;font-weight:700;letter-spacing:0;
+  }
+  .od-slot-btn.od-assigned:hover{background:var(--accent-hover)}
+
+  /* ── Global dropdown ────────────────────────────────────────────────── */
+  #od-dd{
+    position:fixed;z-index:9999;
+    background:var(--surface);
+    border:1px solid var(--border-md);
+    border-radius:10px;
+    box-shadow:0 4px 20px rgba(0,0,0,.14);
+    width:210px;
+    display:none;overflow:hidden;
+  }
+  #od-dd.open{display:block}
+  #od-search{
+    display:block;width:100%;box-sizing:border-box;
+    border:none;border-bottom:1px solid var(--border);
+    padding:8px 10px;font-size:11px;font-family:inherit;
+    color:var(--text);background:var(--surface);outline:none;
+  }
+  #od-search::placeholder{color:var(--faint)}
+  .od-dd-list{max-height:200px;overflow-y:auto;padding:4px 0}
+  .od-dd-item{
+    display:flex;align-items:center;gap:8px;
+    padding:5px 10px;cursor:pointer;font-size:11px;color:var(--text);
+    transition:background .1s;
+  }
+  .od-dd-item:hover{background:var(--bg)}
+  .od-dd-item.od-clear{color:var(--muted);font-style:italic;border-bottom:1px solid var(--border);padding-bottom:7px;margin-bottom:2px}
+  .od-dd-avatar{
+    width:22px;height:22px;border-radius:50%;
+    background:var(--accent);color:#fff;
+    font-size:7.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;overflow:hidden;
+  }
+  .od-dd-avatar img{width:100%;height:100%;object-fit:cover}
+  .od-dd-name{font-weight:500;font-size:11px;line-height:1.25;color:var(--text)}
+  .od-dd-sub{font-size:9px;color:var(--muted);line-height:1.3}
+</style>
+</head>
+<body>
+
+<div class="page-inner">
+  <div class="top-bar">
+    <img src="/kerv-one-favicon.png" alt="KERV"/>
+    <div>
+      <div class="top-bar-title">Org Design</div>
+      <div class="top-bar-sub">Product &amp; Technology — bounded contexts</div>
+    </div>
+  </div>
+  <div class="charts-wrap" id="chartsWrap"></div>
+</div>
+
+<!-- Global user-picker dropdown (single instance, repositioned on open) -->
+<div id="od-dd">
+  <input id="od-search" type="text" placeholder="Search people…" autocomplete="off" oninput="odFilter(this.value)"/>
+  <div class="od-dd-list" id="od-dd-list"></div>
+</div>
+
+<script>
+  // ── SVG icons ───────────────────────────────────────────────────────────────
+  var ICON_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
+  var ICON_SERVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>';
+  var ICON_CHART  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>';
+  var ICON_KERV   = '<img src="/kerv-one-favicon.png" alt=""/>';
+  var ICON_PERSON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+  // ── Org Design slot system ──────────────────────────────────────────────────
+  var OD_USERS      = [];
+  var OD_SLOTS      = {};
+  var OD_ACTIVE     = null;  // currently-open slotId
+
+  function slotHtml(slotId) {
+    return '<div class="od-slot" id="ods-' + slotId + '">'
+      + '<button class="od-slot-btn" data-slot="' + slotId + '" onclick="odOpen(event,\'' + slotId + '\')" title="Assign person">'
+      + ICON_PERSON
+      + '</button>'
+      + '</div>';
+  }
+
+  function odInit() {
+    fetch('/api/neon/org-design')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        OD_USERS = data.users || [];
+        OD_SLOTS = data.slots || {};
+        Object.keys(OD_SLOTS).forEach(function(sid) {
+          if (OD_SLOTS[sid]) odUpdateBtn(sid, OD_SLOTS[sid]);
+        });
+      });
+  }
+
+  function odUpdateBtn(slotId, user) {
+    var wrap = document.getElementById('ods-' + slotId);
+    if (!wrap) return;
+    var btn = wrap.querySelector('.od-slot-btn');
+    if (!btn) return;
+    if (user) {
+      var ini = ((user.firstName || '')[0] || '') + ((user.lastName || '')[0] || '');
+      btn.className = 'od-slot-btn od-assigned';
+      btn.title = (user.firstName || '') + ' ' + (user.lastName || '') + (user.jobTitle ? ' · ' + user.jobTitle : '');
+      if (user.photoUrl) {
+        btn.innerHTML = '<img src="' + user.photoUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover" alt=""/>';
+      } else {
+        btn.innerHTML = ini.toUpperCase() || '?';
+      }
+    } else {
+      btn.className = 'od-slot-btn';
+      btn.title = 'Assign person';
+      btn.innerHTML = ICON_PERSON;
+    }
+  }
+
+  function odOpen(e, slotId) {
+    e.stopPropagation();
+    var dd = document.getElementById('od-dd');
+    if (OD_ACTIVE === slotId && dd.classList.contains('open')) { odClose(); return; }
+    OD_ACTIVE = slotId;
+
+    var btn = e.currentTarget;
+    var r   = btn.getBoundingClientRect();
+    var top = r.bottom + 4;
+    var left = r.left;
+    if (left + 215 > window.innerWidth - 8)  left = window.innerWidth - 220;
+    if (top  + 250 > window.innerHeight - 8) top  = r.top - 254;
+    dd.style.top  = top  + 'px';
+    dd.style.left = left + 'px';
+
+    document.getElementById('od-search').value = '';
+    odRenderList('');
+    dd.classList.add('open');
+    document.getElementById('od-search').focus();
+  }
+
+  function odClose() {
+    document.getElementById('od-dd').classList.remove('open');
+    OD_ACTIVE = null;
+  }
+
+  function odFilter(q) { odRenderList(q); }
+
+  function odRenderList(q) {
+    q = (q || '').toLowerCase();
+    var filtered = q ? OD_USERS.filter(function(u) {
+      return ((u.firstName || '') + ' ' + (u.lastName || '') + ' ' + (u.email || '') + ' ' + (u.jobTitle || ''))
+        .toLowerCase().indexOf(q) !== -1;
+    }) : OD_USERS;
+
+    var html = '<div class="od-dd-item od-clear" onclick="odSelect(null)">— Unassign</div>';
+    filtered.forEach(function(u) {
+      var ini = ((u.firstName || '')[0] || '') + ((u.lastName || '')[0] || '');
+      var avatar = u.photoUrl
+        ? '<img src="' + u.photoUrl + '" alt=""/>'
+        : ini.toUpperCase();
+      html += '<div class="od-dd-item" onclick="odSelect(' + u.id + ')">'
+        + '<div class="od-dd-avatar">' + avatar + '</div>'
+        + '<div><div class="od-dd-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div>'
+        + (u.jobTitle ? '<div class="od-dd-sub">' + u.jobTitle + '</div>' : '')
+        + '</div></div>';
+    });
+    document.getElementById('od-dd-list').innerHTML = html;
+  }
+
+  function odSelect(userId) {
+    var slotId = OD_ACTIVE;
+    odClose();
+    var user = userId ? OD_USERS.filter(function(u) { return u.id === userId; })[0] : null;
+    OD_SLOTS[slotId] = user || null;
+    odUpdateBtn(slotId, user);
+    fetch('/api/neon/org-design', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId: slotId, userId: userId || null })
+    });
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#od-dd') && !e.target.closest('.od-slot-btn')) odClose();
+  });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') odClose(); });
+
+  // ── Column definitions ──────────────────────────────────────────────────────
+  var COLUMNS = [
+    { key:'shared',    name:'Shared Services', sub:'Compliance, Security, IT and DevOps', icon:ICON_SHIELD, domains:[
+        { title:'Security, Compliance & DevOps', spine:3 },
+        { title:'IT Support', spine:2 }
+      ] },
+    { key:'api',       name:'API Suite',        sub:'Content, Live, Commerce, etc',        icon:ICON_SERVER, domains:[
+        { title:'Content and Live', spine:1 },
+        { title:'Commerce', spine:1 }
+      ] },
+    { key:'platform',  name:'KERV Platform',    sub:'',                                    icon:ICON_KERV,   domains:[
+        { title:'Product Design', spine:1 },
+        { title:'Core and Publisher', spine:1 },
+        { title:'Ad Operations', rowIcons:2 }
+      ] },
+    { key:'reporting', name:'Research & Data',  sub:'',                                    icon:ICON_CHART,  domains:[
+        { title:'Data' }
+      ] }
+  ];
+
+  var LOREM = 'Lorem ipsum dolor sit amet';
+
+  // ── Panel renderer ──────────────────────────────────────────────────────────
+  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides) {
+    hiddenKeys = hiddenKeys || [];
+    domainOverrides = domainOverrides || {};
+
+    var infoCells = COLUMNS.map(function(c) {
+      return '<div class="bc-info-cell col-' + c.key + '">'
+        + '<div class="bc-info-card">'
+        +   '<div class="bc-info-label">Bounded Context</div>'
+        +   '<div class="bc-info-body">'
+        +     '<div class="bc-icon">' + c.icon + '</div>'
+        +     '<div><div class="bc-info-title">' + c.name + '</div>'
+        +     '<span class="bc-info-sub">' + (c.sub || LOREM) + '</span>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="bc-info-divider"></div>'
+        +   '<div class="bc-info-user">' + slotHtml(pid + '-' + c.key + '-hd') + '</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    var domainCells = COLUMNS.map(function(c) {
+      if (hiddenKeys.indexOf(c.key) !== -1) {
+        return '<div class="row-cell col-' + c.key + '"></div>';
+      }
+      var domains = domainOverrides[c.key] || c.domains;
+      var cards = domains.map(function(d, dIdx) {
+        if (d.off) {
+          return '<div class="domain-card domain-card--off">'
+            + '<span class="domain-label">Domain</span>'
+            + '<div class="domain-title">' + d.title + '</div>'
+            + '<span class="domain-sub">Lorem Ipsum</span>'
+            + '</div>';
+        }
+
+        var domSlotBase = pid + '-' + c.key + '-d' + dIdx;
+        var iconsHtml = '';
+        var spineHtml = '';
+
+        if (d.rowIcons) {
+          var rowIconsHtml = '';
+          for (var j = 0; j < d.rowIcons; j++) {
+            rowIconsHtml += '<div class="row-icon">' + slotHtml(domSlotBase + '-r' + j) + '</div>';
+          }
+          iconsHtml = '<div class="domain-divider"></div><div class="domain-icon-row">' + rowIconsHtml + '</div>';
+        } else if (typeof d.spine !== 'undefined') {
+          iconsHtml = '<div class="domain-divider"></div><div class="domain-icon">' + slotHtml(domSlotBase) + '</div>';
+          if (d.spine > 1) {
+            var extraHtml = '';
+            for (var i = 1; i < d.spine; i++) {
+              extraHtml += '<div class="spine-icon">' + slotHtml(domSlotBase + '-s' + i) + '</div>';
+            }
+            spineHtml = '<div class="squad-spine">' + extraHtml + '</div>';
+          }
+        }
+
+        return '<div class="domain-card">'
+          + '<span class="domain-label">Domain</span>'
+          + '<div class="domain-title">' + d.title + '</div>'
+          + '<span class="domain-sub">' + (d.sub || 'Lorem Ipsum') + '</span>'
+          + iconsHtml
+          + spineHtml
+          + '</div>';
+      }).join('');
+
+      return '<div class="row-cell col-' + c.key + '">' + cards + '</div>';
+    }).join('');
+
+    function emptyRow() {
+      return COLUMNS.map(function(c) {
+        return '<div class="row-cell col-' + c.key + '"></div>';
+      }).join('');
+    }
+
+    return '<div class="panel">'
+      + '<div class="section-card">'
+      +   '<div class="section-header ' + headerClass + '">' + title + '</div>'
+      +   '<div class="grid"><div></div>' + infoCells + '</div>'
+      +   '<div class="grid row-domsub"><div class="glabel">Domain / Subdomain</div>' + domainCells + '</div>'
+      +   '<div class="grid row-squad"><div class="glabel">Squads</div>' + emptyRow() + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  document.getElementById('chartsWrap').innerHTML =
+    panelHtml('prd', 'Product', 'section-header--product', ['shared'], {
+        reporting: [{ title:'R&D', off:true }, { title:'Data', spine:1 }]
+      })
+    + '<div class="divider"></div>'
+    + panelHtml('tec', 'Technology', 'section-header--technology', [], {
+        api:      [{ title:'Content and Live', spine:3 }, { title:'Commerce', spine:1 }],
+        reporting:[{ title:'R&D', spine:2 }, { title:'Data', spine:3 }],
+        platform: [{ title:'Product Design', off:true }, { title:'Core e VOD', spine:6 }, { title:'Ads Platform', spine:6 }]
+      });
+
+  // ── Boot ─────────────────────────────────────────────────────────────────────
+  odInit();
+</script>
+
+</body>
+</html>

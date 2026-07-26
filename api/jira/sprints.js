@@ -269,7 +269,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET')    return res.status(405).json({ error: 'GET only' });
 
   const project    = req.query?.project    || DEFAULT_PROJECT;
-  const maxSprints = Math.min(parseInt(req.query?.maxSprints || '8', 10), 20);
+  const maxSprints = Math.min(parseInt(req.query?.maxSprints || '15', 10), 50);
   const kanbanWeeks = Math.min(parseInt(req.query?.weeks || '8', 10), 16);
 
   try {
@@ -304,7 +304,7 @@ export default async function handler(req, res) {
       jiraGet(`/rest/agile/1.0/board/${board.id}/sprint?state=future&maxResults=5`)
     ]);
 
-    const closed = (closedRes.values || []).sort((a, b) => a.id - b.id).slice(-3);
+    const closed = (closedRes.values || []).sort((a, b) => a.id - b.id);
     const active = (activeRes.values || []).slice(0, 1);
     const future = (futureRes.values || []).sort((a, b) => a.id - b.id).slice(0, 1);
     const allSprints = [...closed, ...active, ...future];

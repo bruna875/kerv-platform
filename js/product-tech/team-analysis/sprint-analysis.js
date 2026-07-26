@@ -66,12 +66,13 @@ function createSprintAnalysis(config) {
   function _p(s) { return id + '-' + s; } // DOM id: _p('root') → 'xts-root'
 
   // ── State ──
-  var sprints    = [];
-  var capacity   = {};
-  var tickets    = {};
-  var selectedId = null;
-  var charts     = {};
-  var pinnedLinks = [];
+  var sprints      = [];
+  var capacity     = {};
+  var tickets      = {};
+  var selectedId   = null;
+  var charts       = {};
+  var pinnedLinks  = [];
+  var _stripOffset = 0; // index of first visible sprint card in carousel
 
   // ── Pin helpers ──
   function _esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -423,9 +424,8 @@ function createSprintAnalysis(config) {
   }
 
   function renderAll() {
-    // Restore strip grid columns
-    var strip = document.getElementById(_p('strip'));
-    if (strip) strip.style.gridTemplateColumns = 'repeat(' + Math.min(sprints.length, 5) + ',1fr)';
+    // Default view: last 3 closed + current + next (last 5 sprints)
+    _stripOffset = Math.max(0, sprints.length - 5);
     renderStrip();
     renderStats();
     renderVelocityChart();
@@ -479,6 +479,12 @@ function createSprintAnalysis(config) {
       +           ' onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'none\'">'
       +           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2l2 3 2-3h2"/></svg>'
       +           'Download EOS PPT'
+      +         '</div>'
+      +         '<div onclick="_sa(\'' + id + '\').openPdfModal();_sa(\'' + id + '\').closeToolsDd()"'
+      +           ' style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;font-size:13px;color:var(--text);cursor:pointer;transition:background .1s"'
+      +           ' onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'none\'">'
+      +           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+      +           'Export Sprint PDF'
       +         '</div>'
       +         '<div style="height:1px;background:var(--border);margin:4px 0"></div>'
       +         '<div style="position:relative">'
@@ -546,10 +552,19 @@ function createSprintAnalysis(config) {
       + '</div>'
 
       // ══ SECTION: Key Metrics by Sprint ══
+      + '<div id="' + _p('pdf-section') + '">'
       + '<div style="' + _sec + '">Key Metrics by Sprint</div>'
 
-      // ── Sprint selector strip ──
-      + '<div id="' + _p('strip') + '" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px"></div>'
+      // ── Sprint selector strip (carousel) ──
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+      +   '<button id="' + _p('strip-prev') + '" onclick="_sa(\'' + id + '\').stripNav(-1)" style="flex-shrink:0;width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;padding:0" disabled>'
+      +     '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L4 6l3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +   '</button>'
+      +   '<div id="' + _p('strip') + '" style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div>'
+      +   '<button id="' + _p('strip-next') + '" onclick="_sa(\'' + id + '\').stripNav(1)" style="flex-shrink:0;width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;padding:0" disabled>'
+      +     '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2L8 6l-3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +   '</button>'
+      + '</div>'
 
       // ── Sprint summary ──
       + '<div id="' + _p('summary') + '" style="margin-bottom:20px"></div>'
@@ -582,7 +597,8 @@ function createSprintAnalysis(config) {
       +     '<span id="' + _p('tbl-count') + '" style="font-size:11px;color:var(--muted)"></span>'
       +   '</div>'
       +   '<div id="' + _p('ticket-table') + '"></div>'
-      + '</div>';
+      + '</div>'
+      + '</div>';  // close pdf-section
   }
 
   // ── Sprint strip ──────────────────────────────────────────────────────────
@@ -602,7 +618,27 @@ function createSprintAnalysis(config) {
         + '</div>';
     }
 
-    el.innerHTML = sprints.map(function(s) {
+    // Update arrow states
+    var prevBtn = document.getElementById(_p('strip-prev'));
+    var nextBtn = document.getElementById(_p('strip-next'));
+    var canPrev = _stripOffset > 0;
+    var canNext = _stripOffset + 5 < sprints.length;
+    if (prevBtn) {
+      prevBtn.disabled = !canPrev;
+      prevBtn.style.opacity = canPrev ? '1' : '0.3';
+      prevBtn.style.cursor  = canPrev ? 'pointer' : 'default';
+    }
+    if (nextBtn) {
+      nextBtn.disabled = !canNext;
+      nextBtn.style.opacity = canNext ? '1' : '0.3';
+      nextBtn.style.cursor  = canNext ? 'pointer' : 'default';
+    }
+
+    // Show windowed slice of sprints
+    var visible = sprints.slice(_stripOffset, _stripOffset + 5);
+    el.style.gridTemplateColumns = 'repeat(' + Math.min(visible.length, 5) + ',1fr)';
+
+    el.innerHTML = visible.map(function(s) {
       var sel = s.id === selectedId;
       var border = sel ? '2px solid var(--accent)' : '1px solid var(--border)';
       var shadow = sel ? 'box-shadow:0 0 0 3px rgba(99,102,241,.1);' : '';
@@ -1227,10 +1263,171 @@ function createSprintAnalysis(config) {
     }
   }
 
+  // ── PDF export ───────────────────────────────────────────────────────────
+
+  function openPdfModal() {
+    var existing = document.getElementById(_p('pdf-modal'));
+    if (existing) { existing.remove(); return; }
+
+    var available = sprints.filter(function(s) { return s.status !== 'future'; });
+    if (!available.length) { alert('No sprints available to export.'); return; }
+
+    var overlay = document.createElement('div');
+    overlay.id = _p('pdf-modal');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10002;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);transition:background .18s';
+
+    var BF = 'height:34px;padding:0 16px;font-size:13px;font-weight:500;font-family:inherit;border-radius:8px;cursor:pointer;transition:opacity .12s';
+
+    var sprintItems = available.map(function(s) {
+      return '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text)">'
+        + '<input type="checkbox" id="' + _p('pdf-chk-' + s.id) + '" value="' + s.id + '" checked style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">'
+        + '<span>' + _esc(s.name) + '</span>'
+        + '<span style="font-size:11px;color:var(--muted);margin-left:auto">' + (s.start || '') + (s.end ? ' – ' + s.end : '') + '</span>'
+        + '</label>';
+    }).join('');
+
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border-radius:14px;padding:22px 22px 18px;width:420px;max-width:92vw;'
+      + 'box-shadow:0 8px 40px rgba(0,0,0,.18);transform:scale(.95);opacity:0;transition:transform .18s,opacity .18s;font-family:inherit';
+
+    card.innerHTML =
+      '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Export Sprint PDF</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Select sprints to include — each becomes one page in the PDF.</div>'
+      + '<div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px;margin-bottom:8px">'
+      + sprintItems
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px">'
+      + '<button onclick="_sa(\'' + id + '\').pdfChkAll(true)" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;font-family:inherit">Select all</button>'
+      + '<span style="font-size:11px;color:var(--muted)">·</span>'
+      + '<button onclick="_sa(\'' + id + '\').pdfChkAll(false)" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;font-family:inherit">Clear all</button>'
+      + '</div>'
+      + '<div id="' + _p('pdf-progress') + '" style="display:none;font-size:12px;color:var(--muted);margin-bottom:12px;padding:8px 10px;background:var(--bg);border-radius:6px;text-align:center"></div>'
+      + '<div style="display:flex;justify-content:flex-end;gap:8px">'
+      + '<button id="' + _p('pdf-cancel') + '" style="' + BF + ';border:1px solid var(--border-md);background:var(--surface);color:var(--muted)">Cancel</button>'
+      + '<button id="' + _p('pdf-go') + '" style="' + BF + ';border:none;background:var(--accent);color:#fff">Generate PDF</button>'
+      + '</div>';
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(function() { requestAnimationFrame(function() {
+      overlay.style.background = 'rgba(0,0,0,.35)';
+      card.style.transform = 'scale(1)'; card.style.opacity = '1';
+    }); });
+
+    function closeModal() {
+      overlay.style.background = 'rgba(0,0,0,0)';
+      card.style.transform = 'scale(.95)'; card.style.opacity = '0';
+      setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 180);
+    }
+
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+    document.getElementById(_p('pdf-cancel')).onclick = closeModal;
+    document.getElementById(_p('pdf-go')).onclick = function() {
+      var ids = Array.from(document.querySelectorAll('[id^="' + id + '-pdf-chk-"]:checked'))
+        .map(function(c) { return parseInt(c.value, 10); });
+      if (!ids.length) { alert('Select at least one sprint.'); return; }
+      exportSprintPdf(ids, closeModal);
+    };
+  }
+
+  async function exportSprintPdf(sprintIds, closeCb) {
+    if (!window.html2canvas || !window.jspdf) {
+      alert('PDF libraries are still loading — please try again in a moment.');
+      return;
+    }
+
+    var progressEl = document.getElementById(_p('pdf-progress'));
+    var goBtn      = document.getElementById(_p('pdf-go'));
+    var cancelBtn  = document.getElementById(_p('pdf-cancel'));
+    var section    = document.getElementById(_p('pdf-section'));
+
+    if (!section) { alert('PDF section element not found.'); return; }
+    if (goBtn)    { goBtn.disabled = true; goBtn.textContent = 'Generating…'; }
+    if (cancelBtn) cancelBtn.disabled = true;
+
+    try {
+      var jsPDF = window.jspdf.jsPDF;
+      var pdf   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      var pdfW  = pdf.internal.pageSize.getWidth();
+      var pdfH  = pdf.internal.pageSize.getHeight();
+      var first = true;
+
+      for (var i = 0; i < sprintIds.length; i++) {
+        var sid = sprintIds[i];
+        var sprint = sprints.filter(function(s) { return s.id === sid; })[0];
+        var sprintName = sprint ? sprint.name : ('Sprint ' + sid);
+
+        if (progressEl) {
+          progressEl.style.display = 'block';
+          progressEl.textContent = 'Rendering ' + sprintName + ' (' + (i + 1) + ' of ' + sprintIds.length + ')…';
+        }
+
+        // Select sprint and wait for charts to render
+        selectSprint(sid);
+        var waitMs = tickets[sid] !== undefined ? 700 : 1500;
+        await new Promise(function(res) { setTimeout(res, waitMs); });
+
+        // Capture
+        var canvas = await html2canvas(section, {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          allowTaint: true
+        });
+
+        var imgData = canvas.toDataURL('image/jpeg', 0.92);
+        var imgH    = (canvas.height * pdfW) / canvas.width;
+
+        if (!first) pdf.addPage();
+
+        if (imgH <= pdfH) {
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, imgH);
+        } else {
+          // Scale to fit page height
+          var scaledW = (canvas.width * pdfH) / canvas.height;
+          pdf.addImage(imgData, 'JPEG', Math.max(0, (pdfW - scaledW) / 2), 0, scaledW, pdfH);
+        }
+
+        // Sprint name in top-left corner
+        pdf.setFontSize(7);
+        pdf.setTextColor(160, 160, 160);
+        pdf.text(sprintName, 5, 5);
+
+        first = false;
+      }
+
+      // Build filename
+      var s0 = sprints.filter(function(s) { return s.id === sprintIds[0]; })[0];
+      var sN = sprints.filter(function(s) { return s.id === sprintIds[sprintIds.length - 1]; })[0];
+      var fname = (s0 && sN && s0.id !== sN.id)
+        ? (s0.name + ' – ' + sN.name)
+        : (s0 ? s0.name : 'Sprint Report');
+
+      pdf.save(fname + '.pdf');
+      if (progressEl) progressEl.style.display = 'none';
+      if (closeCb) setTimeout(closeCb, 250);
+
+    } catch (err) {
+      console.error('[exportSprintPdf]', err);
+      alert('PDF generation failed: ' + err.message);
+      if (progressEl) progressEl.style.display = 'none';
+      if (goBtn)    { goBtn.disabled = false; goBtn.textContent = 'Generate PDF'; }
+      if (cancelBtn) cancelBtn.disabled = false;
+    }
+  }
+
   // ── Sprint selection ──────────────────────────────────────────────────────
 
   function selectSprint(sprintId) {
     selectedId = sprintId;
+    // Ensure the selected sprint is visible in the carousel window
+    var idx = -1;
+    for (var _i = 0; _i < sprints.length; _i++) { if (sprints[_i].id === sprintId) { idx = _i; break; } }
+    if (idx >= 0) {
+      if (idx < _stripOffset) _stripOffset = idx;
+      else if (idx >= _stripOffset + 5) _stripOffset = Math.max(0, idx - 4);
+    }
     renderStrip();
     renderTicketType();
     renderCapacity();
@@ -1447,15 +1644,25 @@ function createSprintAnalysis(config) {
   }
 
   // ── Public instance ──
+  function stripNav(dir) {
+    var newOffset = _stripOffset + dir;
+    if (newOffset < 0 || newOffset + 5 > sprints.length) return;
+    _stripOffset = newOffset;
+    renderStrip();
+  }
+
   var inst = {
     render:            function() { return '<div id="' + _p('root') + '">' + shell() + '</div>'; },
     init:              function() { loadFromJira(); },
     selectSprint:      function(sprintId) { selectSprint(sprintId); },
+    stripNav:          function(dir) { stripNav(dir); },
     renderMemberTrend: function() { renderMemberTrend(); },
     togglePinDd:       function() { togglePinDd(); },
     openPinModal:      function(linkIdOrNull) { openPinModal(linkIdOrNull); },
     deletePinLink:     function(linkId) { deletePinLink(linkId); },
     exportToPptx:      function() { exportToPptx(); },
+    openPdfModal:      function() { openPdfModal(); },
+    pdfChkAll:         function(v) { var m = document.getElementById(_p('pdf-modal')); if (m) m.querySelectorAll('input[type=checkbox]').forEach(function(c){c.checked=v;}); },
     toggleToolsDd:     function(e) { toggleToolsDd(e); },
     closeToolsDd:      function() { closeToolsDd(); },
     openCapMonths:     function() { openCapMonths(); },
