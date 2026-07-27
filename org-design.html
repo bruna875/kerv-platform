@@ -76,8 +76,10 @@
   .squad-col--empty{flex:1 1 0}
   .squad-col--empty::before{display:none}
   .squad-qa-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)}
-  .shared-qa-row{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 10px 14px;margin-top:auto}
+  .shared-qa-row{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 10px 14px;margin-top:auto}
   .shared-qa-line{height:1px;background:var(--border-md);width:100%}
+  .shared-qa-slots{display:flex;gap:14px;justify-content:center}
+  .shared-qa-item{display:flex;flex-direction:column;align-items:center;gap:6px}
 
   .row-domsub .row-cell,.row-domsub .glabel{border-top:1px solid var(--border-md)}
   .row-squad  .row-cell,.row-squad  .glabel{border-top:1px solid var(--border-md)}
@@ -416,8 +418,10 @@
         var padPct = Math.round(skip / total * 100);
         qaHtml = '<div class="shared-qa-row" style="padding-left:' + padPct + '%">'
           + '<div class="shared-qa-line"></div>'
-          + '<div class="squad-qa-label">QA</div>'
-          + slotHtml(pid + '-' + c.key + '-qa')
+          + '<div class="shared-qa-slots">'
+          + '<div class="shared-qa-item"><div class="squad-qa-label">QA</div>' + slotHtml(pid + '-' + c.key + '-qa') + '</div>'
+          + '<div class="shared-qa-item"><div class="squad-qa-label">PM</div>' + slotHtml(pid + '-' + c.key + '-pm') + '</div>'
+          + '</div>'
           + '</div>';
       }
 
