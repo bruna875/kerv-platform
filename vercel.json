@@ -3,7 +3,7 @@
     { "source": "/taxonomy-v1/standalone", "destination": "/taxonomy-standalone.html" },
     { "source": "/product-spec", "destination": "/product-spec.html" },
     { "source": "/submit-product-request", "destination": "/submit-product-request.html" },
-    { "source": "/org-design", "destination": "/org-design.html" },
+    { "source": "/structure", "destination": "/org-design.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "crons": [
