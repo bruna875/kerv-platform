@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "4321", "--no-clipboard", "."],
       "port": 4321
+    },
+    {
+      "name": "vercel-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vercel", "dev", "--listen", "4322", "--yes"],
+      "port": 4322
     }
   ]
 }

@@ -23,6 +23,17 @@
   .top-bar-title{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px}
   .top-bar-sub{font-size:12px;color:var(--muted)}
 
+  .odv-version-bar{margin-left:auto;display:flex;align-items:center;gap:6px}
+  .odv-version-bar select{font-family:inherit;font-size:12px;padding:6px 9px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer}
+  .odv-version-bar button{font-family:inherit;font-size:11px;font-weight:500;padding:6px 10px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s}
+  .odv-version-bar button:hover{border-color:var(--accent);color:var(--accent)}
+  .odv-saved-flash{font-size:10px;color:var(--faint);opacity:0;transition:opacity .2s}
+  .odv-saved-flash.show{opacity:1}
+
+  .bc-info-title[contenteditable],.bc-info-sub[contenteditable]{outline:none;border-radius:4px;cursor:text;padding:1px 3px;margin:-1px -3px}
+  .bc-info-title[contenteditable]:hover,.bc-info-sub[contenteditable]:hover{background:var(--subtle)}
+  .bc-info-title[contenteditable]:focus,.bc-info-sub[contenteditable]:focus{background:var(--surface);box-shadow:0 0 0 2px rgba(237,0,94,.25)}
+
   .page-inner{width:max-content}
   .charts-wrap{display:flex;align-items:stretch;gap:0}
   .divider{width:1px;align-self:stretch;background:var(--border-md);margin:0 28px;flex-shrink:0}
@@ -171,6 +182,7 @@
       <div class="top-bar-title">Proposed Structure for Demo Platform Productization</div>
       <div class="top-bar-sub">Product &amp; Technology teams</div>
     </div>
+    <div class="odv-version-bar" id="odvVersionBar"></div>
   </div>
   <div class="charts-wrap" id="chartsWrap"></div>
 </div>
@@ -200,18 +212,6 @@
       + ICON_PERSON
       + '</button>'
       + '</div>';
-  }
-
-  function odInit() {
-    fetch('/api/neon/org-design')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        OD_USERS = data.users || [];
-        OD_SLOTS = data.slots || {};
-        Object.keys(OD_SLOTS).forEach(function(sid) {
-          if (OD_SLOTS[sid]) odUpdateBtn(sid, OD_SLOTS[sid]);
-        });
-      });
   }
 
   function odUpdateBtn(slotId, user) {
@@ -294,7 +294,7 @@
     fetch('/api/neon/org-design', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slotId: slotId, userId: userId || null })
+      body: JSON.stringify({ slotId: slotId, userId: userId || null, versionId: ODV_ACTIVE_ID })
     });
   }
 
@@ -303,43 +303,137 @@
   });
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') odClose(); });
 
-  // ── Column definitions ──────────────────────────────────────────────────────
-  var COLUMNS = [
-    { key:'shared',    name:'Shared Services', sub:'Compliance, Security, IT and DevOps', icon:ICON_SHIELD, domains:[
-        { title:'Security, Compliance & DevOps', spine:3 },
-        { title:'IT Support', spine:2 }
-      ] },
-    { key:'api',       name:'API Suite',        sub:'Content, Live, Commerce, etc',        icon:ICON_SERVER, domains:[
-        { title:'Content APIs',   sub:'VOD, Livestream, Audio, Taxonomies',                                          spine:1 },
-        { title:'Commerce APIs',  sub:'Product Catalogs',                                                            spine:1 }
-      ] },
-    { key:'platform',  name:'KERV Platform',    sub:'End-to-End Platform Experience covering Publishers suite, AdOps tools, Matching Engine and integrations', icon:ICON_KERV,   domains:[
-        { title:'Product Design',       sub:'UX/UI, Rapid Prototyping, Design System',                               spine:1 },
-        { title:'Core and Publisher',   sub:'User & Org, Design System, VOD/LIVE/OLV',                               spine:1 },
-        { title:'Ad Operations Tools',  sub:'Campaign Management, Creative Studio, Ad Formats, Partner Distribution', rowIcons:2 }
-      ] },
-    { key:'reporting', name:'Research & Data',  sub:'R&D, Innovation, and Data',            icon:ICON_CHART,  domains:[
-        { title:'Data', sub:'Data Engineering, Analytics and Reporting' }
-      ] }
-  ];
+  // ── Column icons (fixed per bounded-context key; not editable/versioned) ─────
+  var ICONS_BY_KEY = { shared: ICON_SHIELD, api: ICON_SERVER, platform: ICON_KERV, reporting: ICON_CHART };
 
   var LOREM = 'Lorem ipsum dolor sit amet';
 
+  // ── Versioning state ─────────────────────────────────────────────────────────
+  var ODV_DATA        = null;  // { columns:[...], panels:{prd:{...}, tec:{...}} } for the active version
+  var ODV_VERSIONS     = [];    // [{id,name}]
+  var ODV_ACTIVE_ID    = null;
+  var _odvSaveTimer    = null;
+
+  function odvLoad(versionId) {
+    var url = '/api/neon/org-design' + (versionId ? ('?versionId=' + versionId) : '');
+    fetch(url).then(function(r) { return r.json(); }).then(function(res) {
+      OD_USERS      = res.users || [];
+      ODV_VERSIONS  = res.versions || [];
+      ODV_ACTIVE_ID = res.activeVersionId;
+      ODV_DATA      = res.data;
+      OD_SLOTS      = res.slots || {};
+      odvRenderVersionBar();
+      renderCharts();
+      Object.keys(OD_SLOTS).forEach(function(sid) {
+        if (OD_SLOTS[sid]) odUpdateBtn(sid, OD_SLOTS[sid]);
+      });
+    });
+  }
+
+  function odvRenderVersionBar() {
+    var bar = document.getElementById('odvVersionBar');
+    var opts = ODV_VERSIONS.map(function(v) {
+      return '<option value="' + v.id + '"' + (v.id === ODV_ACTIVE_ID ? ' selected' : '') + '>' + v.name + '</option>';
+    }).join('');
+    bar.innerHTML =
+      '<select id="odvSelect" onchange="odvSwitchVersion(this.value)">' + opts + '</select>'
+      + '<button onclick="odvNewVersion()" title="Duplicate this version">+ New version</button>'
+      + '<button onclick="odvRenameVersion()" title="Rename this version">Rename</button>'
+      + '<button onclick="odvDeleteVersion()" title="Delete this version">Delete</button>'
+      + '<span class="odv-saved-flash" id="odvSavedFlash">Saved</span>';
+  }
+
+  function odvSwitchVersion(id) { odvLoad(parseInt(id, 10)); }
+
+  function odvNewVersion() {
+    var src  = ODV_VERSIONS.filter(function(v) { return v.id === ODV_ACTIVE_ID; })[0];
+    var name = prompt('New version name:', (src ? src.name : 'Version') + ' (copy)');
+    if (!name) return;
+    fetch('/api/neon/org-design', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create-version', name: name, fromVersionId: ODV_ACTIVE_ID })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.ok) odvLoad(res.versionId);
+    });
+  }
+
+  function odvRenameVersion() {
+    var cur  = ODV_VERSIONS.filter(function(v) { return v.id === ODV_ACTIVE_ID; })[0];
+    var name = prompt('Rename version:', cur ? cur.name : '');
+    if (!name) return;
+    fetch('/api/neon/org-design', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'rename-version', versionId: ODV_ACTIVE_ID, name: name })
+    }).then(function() { odvLoad(ODV_ACTIVE_ID); });
+  }
+
+  function odvDeleteVersion() {
+    if (ODV_VERSIONS.length <= 1) { alert('You can\'t delete the only remaining version.'); return; }
+    var cur = ODV_VERSIONS.filter(function(v) { return v.id === ODV_ACTIVE_ID; })[0];
+    if (!confirm('Delete version "' + (cur ? cur.name : '') + '"? This cannot be undone.')) return;
+    fetch('/api/neon/org-design', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete-version', versionId: ODV_ACTIVE_ID })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.ok) odvLoad(res.nextVersionId);
+    });
+  }
+
+  // Bounded-context name/description are contenteditable — save on blur (debounced).
+  function odvEditKeydown(e, el) {
+    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+  }
+
+  function odvFieldBlur(el) {
+    var key   = el.getAttribute('data-col-key');
+    var field = el.getAttribute('data-field');
+    var col   = ODV_DATA.columns.filter(function(c) { return c.key === key; })[0];
+    if (!col) return;
+    var val = el.textContent.trim();
+    if (col[field] === val) return;
+    col[field] = val;
+    odvSaveData();
+  }
+
+  function odvSaveData() {
+    clearTimeout(_odvSaveTimer);
+    _odvSaveTimer = setTimeout(function() {
+      fetch('/api/neon/org-design', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save-data', versionId: ODV_ACTIVE_ID, data: ODV_DATA })
+      }).then(function() {
+        var flash = document.getElementById('odvSavedFlash');
+        if (!flash) return;
+        flash.classList.add('show');
+        setTimeout(function() { flash.classList.remove('show'); }, 1200);
+      });
+    }, 500);
+  }
+
+  function renderCharts() {
+    document.getElementById('chartsWrap').innerHTML =
+      panelHtml('prd', 'Product', 'section-header--product')
+      + '<div class="divider"></div>'
+      + panelHtml('tec', 'Technology', 'section-header--technology');
+  }
+
   // ── Panel renderer ──────────────────────────────────────────────────────────
-  function panelHtml(pid, title, headerClass, hiddenKeys, domainOverrides, qaColumns, qaSkipMap) {
-    hiddenKeys = hiddenKeys || [];
-    domainOverrides = domainOverrides || {};
-    qaColumns = qaColumns || [];
-    qaSkipMap = qaSkipMap || {};
+  function panelHtml(pid, title, headerClass) {
+    var panelCfg        = (ODV_DATA.panels && ODV_DATA.panels[pid]) || {};
+    var hiddenKeys       = panelCfg.hiddenKeys || [];
+    var domainOverrides  = panelCfg.domainOverrides || {};
+    var qaColumns        = panelCfg.qaColumns || [];
+    var qaSkipMap        = panelCfg.qaSkipMap || {};
+    var COLUMNS          = ODV_DATA.columns;
 
     var infoCells = COLUMNS.map(function(c) {
       return '<div class="bc-info-cell col-' + c.key + '">'
         + '<div class="bc-info-card">'
         +   '<div class="bc-info-label">Bounded Context</div>'
         +   '<div class="bc-info-body">'
-        +     '<div class="bc-icon">' + c.icon + '</div>'
-        +     '<div><div class="bc-info-title">' + c.name + '</div>'
-        +     '<span class="bc-info-sub">' + (c.sub || LOREM) + '</span>'
+        +     '<div class="bc-icon">' + (ICONS_BY_KEY[c.key] || '') + '</div>'
+        +     '<div><div class="bc-info-title" contenteditable="true" spellcheck="false" data-col-key="' + c.key + '" data-field="name" onblur="odvFieldBlur(this)" onkeydown="odvEditKeydown(event,this)">' + c.name + '</div>'
+        +     '<span class="bc-info-sub" contenteditable="true" spellcheck="false" data-col-key="' + c.key + '" data-field="sub" onblur="odvFieldBlur(this)" onkeydown="odvEditKeydown(event,this)">' + (c.sub || LOREM) + '</span>'
         +     '</div>'
         +   '</div>'
         +   '<div class="bc-info-divider"></div>'
@@ -442,17 +536,7 @@
   }
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
-  document.getElementById('chartsWrap').innerHTML =
-    panelHtml('prd', 'Product', 'section-header--product', ['shared'], {
-      reporting:[{ title:'R&D', off:true }, { title:'Data', sub:'Data Engineering, Analytics and Reporting', spine:1 }]
-    })
-    + '<div class="divider"></div>'
-    + panelHtml('tec', 'Technology', 'section-header--technology', [], {
-      api:     [{ title:'Content APIs', sub:'VOD, Livestream, Audio, Taxonomies', spine:3 }, { title:'Commerce APIs', sub:'Product Catalogs', spine:1 }],
-      reporting:[{ title:'R&D', sub:'Product Innovation, Research and POCs', spine:1 }, { title:'Data', sub:'Data Engineering, Analytics and Reporting', spine:3 }],
-      platform:[{ title:'Product Design', off:true }, { title:'Core and Publisher', sub:'User & Org, Design System, VOD/LIVE/OLV', spine:6 }, { title:'Ad Operations Tools', sub:'Campaign Management, Creative Studio, Ad Formats, Partner Distribution', spine:6 }]
-    }, ['platform'], { platform:1 });
-  odInit();
+  odvLoad();
 </script>
 
 </body>
